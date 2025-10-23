@@ -1,0 +1,17 @@
+{
+  "short_name": "Word Guess",
+  "name": "React Word Guess Game",
+  "description": "A fully-featured, accessible, and SEO-friendly word guessing game built with React, TypeScript, and Tailwind CSS.",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#18181b",
+  "background_color": "#18181b"
+}

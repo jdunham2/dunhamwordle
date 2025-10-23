@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#18181b" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/vite.svg">
+    <meta
+      name="description"
+      content="Challenge your vocabulary with this fun word guessing game! You have six tries to guess the five-letter word. Built with React and Tailwind CSS."
+    />
+    <title>React Word Guess Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'absent': '#3a3a3c',
+              'present': '#b59f3b',
+              'correct': '#538d4e',
+              'tile-border': '#3a3a3c',
+              'key-bg': '#818384',
+            },
+            animation: {
+              'flip': 'flip 0.6s ease-in-out forwards',
+              'pop': 'pop 0.1s ease-in-out',
+              'shake': 'shake 0.5s ease-in-out'
+            },
+            keyframes: {
+              flip: {
+                '0%': { transform: 'rotateX(0deg)' },
+                '50%': { transform: 'rotateX(90deg)' },
+                '100%': { transform: 'rotateX(0deg)' },
+              },
+              pop: {
+                '0%, 100%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.1)' },
+              },
+              shake: {
+                '10%, 90%': { transform: 'translateX(-1px)' },
+                '20%, 80%': { transform: 'translateX(2px)' },
+                '30%, 50%, 70%': { transform: 'translateX(-4px)' },
+                '40%, 60%': { transform: 'translateX(4px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.546.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-zinc-900 text-white">
+    <div id="root"></div>
+    <noscript>
+      <h1>A Word Guessing Game</h1>
+      <p>This is a word guessing game similar to Wordle. You need to enable JavaScript to play.</p>
+      <p>How to Play: Guess the hidden five-letter word in six tries. After each guess, the color of the tiles will change to show how close your guess was to the word. Green means the letter is in the word and in the correct spot. Yellow means the letter is in the word but in the wrong spot. Gray means the letter isn't in the word at all.</p>
+    </noscript>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
