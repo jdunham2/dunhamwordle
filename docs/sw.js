@@ -12,7 +12,7 @@ const coreUrlsToCache = [
 const assetFiles = [
   "./assets/index-DQlCU8oW.css",
   "./assets/index-lr7Vn8-s.js",
-  "./assets/manifest-Cp7ezSgK.json",
+  "./assets/manifest-CUqjQ4UO.json",
   "./assets/vite-CWPIoHfL.svg"
 ];
 

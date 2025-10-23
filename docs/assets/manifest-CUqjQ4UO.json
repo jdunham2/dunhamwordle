@@ -1,6 +1,6 @@
 {
-  "short_name": "Word Guess",
-  "name": "React Word Guess Game",
+  "short_name": "Dunham Wordle",
+  "name": "Dunham Wordle",
   "description": "A fully-featured, accessible, and SEO-friendly word guessing game built with React, TypeScript, and Tailwind CSS.",
   "id": "./index.html",
   "scope": "./",

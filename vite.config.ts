@@ -27,6 +27,10 @@ export default defineConfig({
           }
         });
 
+        // Create .nojekyll file for GitHub Pages
+        writeFileSync(resolve(outDir, '.nojekyll'), '');
+        console.log('Created .nojekyll file for GitHub Pages');
+
         // Copy and update service worker with current asset names
         const assetsDir = resolve(outDir, 'assets');
         if (existsSync(assetsDir)) {
