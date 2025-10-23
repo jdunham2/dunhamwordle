@@ -1,5 +1,4 @@
 import React, { useReducer, useEffect, useCallback, useRef, useState, createContext } from 'react';
-import { AdBanner } from './components/AdBanner';
 import { Grid } from './components/Grid';
 import { Keyboard } from './components/Keyboard';
 import { Boosts } from './components/Boosts';
@@ -448,8 +447,6 @@ function App() {
           isRevealDisabled={isGameOver || !canReveal}
           isEliminateDisabled={isGameOver}
         />
-
-        <AdBanner triggerShow={state.gameStatus === GameStatus.Won || state.gameStatus === GameStatus.Lost} />
 
         <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
       </div>
