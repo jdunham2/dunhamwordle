@@ -1,6 +1,6 @@
-// URLs for the word lists from the root directory.
-const SOLUTIONS_URL = '/wordle-answers-alphabetical.txt';
-const ALLOWED_GUESSES_URL = '/wordle-allowed-guesses.txt';
+// URLs for the word lists relative to the app root (works on GitHub Pages subpaths)
+const SOLUTIONS_URL = './wordle-answers-alphabetical.txt';
+const ALLOWED_GUESSES_URL = './wordle-allowed-guesses.txt';
 
 
 interface WordLists {
@@ -32,7 +32,7 @@ export const loadWordLists = async (): Promise<WordLists> => {
       .split('\n')
       .map(word => word.trim().toUpperCase())
       .filter(word => word.length === 5);
-      
+
     const allowedGuesses = allowedGuessesText
       .split('\n')
       .map(word => word.trim().toUpperCase())

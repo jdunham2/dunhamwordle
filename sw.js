@@ -1,27 +1,12 @@
-const CACHE_NAME = 'word-guess-cache-v1';
+const CACHE_NAME = 'word-guess-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
-  './index.tsx',
   './vite.svg',
+  './manifest.json',
   './App.css',
-  './types.ts',
-  './services/wordService.ts',
-  './hooks/useKeyPress.ts',
-  './App.tsx',
-  './components/AdBanner.tsx',
-  './components/Grid.tsx',
-  './components/Row.tsx',
-  './components/Tile.tsx',
-  './components/Keyboard.tsx',
-  './components/Boosts.tsx',
   './wordle-allowed-guesses.txt',
-  './wordle-answers-alphabetical.txt',
-  'https://cdn.tailwindcss.com',
-  'https://aistudiocdn.com/lucide-react@^0.546.0',
-  'https://aistudiocdn.com/react-dom@^19.2.0/',
-  'https://aistudiocdn.com/react@^19.2.0/',
-  'https://aistudiocdn.com/react@^19.2.0'
+  './wordle-answers-alphabetical.txt'
 ];
 
 self.addEventListener('install', (event) => {
