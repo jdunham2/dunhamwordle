@@ -1,5 +1,5 @@
 {
-  "name": "React Word Guess Game",
-  "description": "A fully-featured, accessible, and SEO-friendly word guessing game built with React, TypeScript, and Tailwind CSS, following a clean, scalable architecture with centralized state management using useReducer.",
+  "name": "Dunham Wordle",
+  "description": "Dunham's Wordle - With guesses :)",
   "requestFramePermissions": []
 }

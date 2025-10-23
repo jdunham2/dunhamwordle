@@ -1,11 +1,14 @@
-const CACHE_NAME = 'word-guess-cache-v3';
+const CACHE_NAME = 'word-guess-cache-v4';
+const GHPATH = '/dunhamwordle';
 
 // Core files that should always be cached
 const coreUrlsToCache = [
-  './',
-  './index.html',
-  './wordle-allowed-guesses.txt',
-  './wordle-answers-alphabetical.txt'
+  `${GHPATH}/`,
+  `${GHPATH}/index.html`,
+  `${GHPATH}/manifest.json`,
+  `${GHPATH}/vite.svg`,
+  `${GHPATH}/wordle-allowed-guesses.txt`,
+  `${GHPATH}/wordle-answers-alphabetical.txt`
 ];
 
 self.addEventListener('install', (event) => {
@@ -14,33 +17,32 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        // Cache core files first
-        return cache.addAll(coreUrlsToCache).then(() => {
-          // Then cache all assets from the current page
-          return cache.addAll([
-            './assets/vite-CWPIoHfL.svg',
-            './assets/manifest-Cp7ezSgK.json',
-            './assets/index-DQlCU8oW.css',
-            './assets/index-lr7Vn8-s.js'
-          ]).catch(err => {
-            console.log('Some assets failed to cache:', err);
-            // Don't fail the entire cache operation if some assets fail
-          });
+        return cache.addAll(coreUrlsToCache).catch(err => {
+          console.log('Some core files failed to cache:', err);
         });
       })
   );
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle requests within our scope
+  if (!event.request.url.includes(GHPATH)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
+        return fetch(event.request).catch(() => {
+          // If fetch fails, try to serve index.html for navigation requests
+          if (event.request.mode === 'navigate') {
+            return caches.match(`${GHPATH}/index.html`);
+          }
+        });
+      })
   );
 });
 

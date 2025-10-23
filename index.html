@@ -2,13 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/dunhamwordle/vite.svg" />
+    <link rel="manifest" href="/dunhamwordle/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#18181b" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="./vite.svg">
+    <meta name="apple-mobile-web-app-title" content="Dunham Wordle">
+    <link rel="apple-touch-icon" href="/dunhamwordle/vite.svg">
+    <link rel="canonical" href="https://jeshuad.github.io/dunhamwordle/" />
     <meta
       name="description"
       content="Challenge your vocabulary with this fun word guessing game! You have six tries to guess the five-letter word. Built with React and Tailwind CSS."
@@ -73,5 +75,18 @@
       <p>How to Play: Guess the hidden five-letter word in six tries. After each guess, the color of the tiles will change to show how close your guess was to the word. Green means the letter is in the word and in the correct spot. Yellow means the letter is in the word but in the wrong spot. Gray means the letter isn't in the word at all.</p>
     </noscript>
     <script type="module" src="./index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/dunhamwordle/sw.js', {
+            scope: '/dunhamwordle/'
+          }).then((registration) => {
+            console.log('SW registered: ', registration);
+          }).catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
