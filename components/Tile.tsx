@@ -13,7 +13,9 @@ interface TileProps {
 const TileComponent: React.FC<TileProps> = ({ letter, status, isSubmitted, index, isCurrentRow }) => {
     const { hintIndices, solution } = useContext(AppContext);
     const isHint = isCurrentRow && hintIndices.has(index);
-    const displayLetter = isHint ? solution[index] : letter;
+
+    // Show the typed letter if there is one (and it's not just a space), otherwise show the hint
+    const displayLetter = letter && letter.trim() ? letter : (isHint ? solution[index] : '');
 
     const statusClasses: Record<TileStatus, string> = {
         empty: 'border-tile-border bg-transparent',
@@ -22,11 +24,11 @@ const TileComponent: React.FC<TileProps> = ({ letter, status, isSubmitted, index
         present: 'bg-present text-white border-present',
         absent: 'bg-absent text-white border-absent',
     };
-    
+
     const animationDelay = `${index * 100}ms`;
     const animationClass = isSubmitted ? 'animate-flip' : '';
-    const hintClass = isHint ? 'tile-hint' : '';
-    
+    const hintClass = isHint && (!letter || !letter.trim()) ? 'tile-hint' : '';
+
     const label = displayLetter.trim()
         ? `Letter ${displayLetter.toUpperCase()}, status: ${status}`
         : `Empty tile`;

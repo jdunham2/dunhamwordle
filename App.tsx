@@ -187,7 +187,8 @@ function App() {
   const announcementsRef = useRef<HTMLDivElement>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [hintIndices, setHintIndices] = useState<Set<number>>(new Set());
+  // Track revealed hints: just store which indices were revealed
+  const [revealedHintIndices, setRevealedHintIndices] = useState<Set<number>>(new Set());
   const [keySequence, setKeySequence] = useState('');
 
 
@@ -205,12 +206,40 @@ function App() {
     dispatch({ type: 'START_GAME', payload: { solution: newSolution } });
   }, []);
 
-  // Reset hints when a new row starts
+  // Reset hints only when starting a completely new game
   useEffect(() => {
-    if (state.gameStatus === GameStatus.Playing) {
-        setHintIndices(new Set());
+    if (state.gameStatus === GameStatus.Loading) {
+      setRevealedHintIndices(new Set());
     }
-  }, [state.currentGuessIndex, state.gameStatus]);
+  }, [state.gameStatus]);
+
+  // Calculate which hints should be visible based on:
+  // 1. What indices were revealed (revealedHintIndices)
+  // 2. What indices have been correctly guessed (should NOT show)
+  const getVisibleHints = useCallback((): Set<number> => {
+    const correctIndices = new Set<number>();
+
+    // Find all positions that have been correctly guessed
+    state.guesses.forEach(guess => {
+      if (guess) {
+        guess.split('').forEach((letter, i) => {
+          if (state.solution[i] === letter) {
+            correctIndices.add(i);
+          }
+        });
+      }
+    });
+
+    // Only show revealed hints that haven't been correctly guessed yet
+    const visibleHints = new Set<number>();
+    revealedHintIndices.forEach(index => {
+      if (!correctIndices.has(index)) {
+        visibleHints.add(index);
+      }
+    });
+
+    return visibleHints;
+  }, [state.guesses, state.solution, revealedHintIndices]);
 
   useEffect(() => {
     if(state.gameStatus === GameStatus.Loading) {
@@ -268,42 +297,38 @@ function App() {
         setKeySequence(''); // Reset on non-letter keys
     }
 
-    // Any other key press removes hint styling from view
-    setHintIndices(new Set());
+    // Hints persist until explicitly cleared or new game starts
 
     if (key === 'Enter') {
-      let finalGuess = '';
-      let typedCursor = 0;
-      for (let i = 0; i < WORD_LENGTH; i++) {
-        if (hintIndices.has(i)) {
-            finalGuess += state.solution[i];
-        } else {
-            if (typedCursor < state.currentGuess.length) {
-                finalGuess += state.currentGuess[typedCursor];
-                typedCursor++;
-            } else {
-                finalGuess += ' '; // Add a space for unfilled letters
-            }
-        }
-      }
-
-      if (finalGuess.includes(' ')) {
+      // Use the actual typed letters, not the ghost letters
+      if (state.currentGuess.length !== WORD_LENGTH) {
         dispatch({ type: 'SET_ERROR', payload: { error: 'Not enough letters' } });
         return;
       }
 
-      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: finalGuess } });
+      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: state.currentGuess } });
     } else if (key === 'Backspace') {
       dispatch({ type: 'BACKSPACE' });
     } else if (key.length === 1 && key.match(/[a-z]/i)) {
       dispatch({ type: 'TYPE_LETTER', payload: { letter: key } });
     }
-  }, [state.gameStatus, state.currentGuess, state.solution, hintIndices, keySequence]);
+  }, [state.gameStatus, state.currentGuess, state.solution, keySequence]);
 
   useKeyPress(handleKeyPress);
 
+  // Track if we're currently processing a reveal to prevent double-calls
+  const isProcessingRevealRef = useRef(false);
+
+  // Only called when user clicks the Reveal button
   const handleRevealBoost = useCallback(() => {
-    // 1. Find all indices that are already correct (green) from previous guesses.
+    // Prevent double-calls
+    if (isProcessingRevealRef.current) {
+      return;
+    }
+
+    isProcessingRevealRef.current = true;
+
+    // Find all indices that are already correct (green) from previous guesses
     const correctIndices = new Set<number>();
     state.guesses.forEach(guess => {
       if (guess) {
@@ -315,21 +340,25 @@ function App() {
       }
     });
 
-    // 2. Find the first index in the solution that is not already correct AND not already a hint.
+    // Find the first index that hasn't been revealed yet and isn't correct
     let revealableIndex: number | null = null;
     for (let i = 0; i < state.solution.length; i++) {
-      if (!correctIndices.has(i) && !hintIndices.has(i)) {
+      if (!correctIndices.has(i) && !revealedHintIndices.has(i)) {
         revealableIndex = i;
         break;
       }
     }
 
+    // Add this index to the revealed hints
     if (revealableIndex !== null) {
-      // 3. Add the new index to the hints.
-      setHintIndices(prev => new Set(prev).add(revealableIndex!));
+      setRevealedHintIndices(prev => new Set(prev).add(revealableIndex));
     }
-  }, [state.solution, state.guesses, hintIndices]);
 
+    // Reset the flag after a short delay to allow the next legitimate click
+    setTimeout(() => {
+      isProcessingRevealRef.current = false;
+    }, 100);
+  }, [state.solution, state.guesses, revealedHintIndices]);
 
   const handleEliminateBoost = useCallback(() => {
     const solutionLetters = new Set(state.solution.split(''));
@@ -362,7 +391,7 @@ function App() {
   const winPercentage = state.stats.gamesPlayed > 0 ? Math.round((state.stats.wins / state.stats.gamesPlayed) * 100) : 0;
 
   const distEntries = Object.entries(state.stats.guessDistribution);
-  const maxDistCount = Math.max(...distEntries.map(([, count]) => count), 1);
+  const maxDistCount = Math.max(...distEntries.map(([, count]) => count as number), 1);
 
   const handlePlayAgain = () => {
     dispatch({ type: 'NEW_GAME' });
@@ -400,7 +429,7 @@ function App() {
         {state.gameStatus === GameStatus.Loading ? (
             <p>Loading...</p>
         ) : (
-             <AppContext.Provider value={{ hintIndices, solution: state.solution }}>
+             <AppContext.Provider value={{ hintIndices: getVisibleHints(), solution: state.solution }}>
                  <Grid
                     guesses={state.guesses}
                     currentGuess={state.currentGuess}
@@ -502,19 +531,22 @@ function App() {
 
                 <h3 className="text-xl font-bold mb-4 text-center">Guess Distribution</h3>
                 <div className="space-y-2 px-4">
-                  {distEntries.map(([guesses, count]) => (
-                    <div key={guesses} className="flex items-center gap-3 w-full text-base">
-                      <div className="w-4 font-semibold">{guesses}</div>
-                      <div className="flex-1 bg-zinc-700 rounded-sm">
-                        <div
-                          className={`h-5 text-right pr-2 text-white flex items-center justify-end rounded-sm ${state.gameStatus === GameStatus.Won && state.currentGuessIndex === Number(guesses) ? 'bg-correct' : 'bg-absent'}`}
-                          style={{ width: count > 0 ? `${(count / maxDistCount) * 100}%` : '0' }}
-                        >
-                          {count > 0 && <span className="font-bold">{count}</span>}
+                  {distEntries.map(([guesses, count]) => {
+                    const countNum = count as number;
+                    return (
+                      <div key={guesses} className="flex items-center gap-3 w-full text-base">
+                        <div className="w-4 font-semibold">{guesses}</div>
+                        <div className="flex-1 bg-zinc-700 rounded-sm">
+                          <div
+                            className={`h-5 text-right pr-2 text-white flex items-center justify-end rounded-sm ${state.gameStatus === GameStatus.Won && state.currentGuessIndex === Number(guesses) ? 'bg-correct' : 'bg-absent'}`}
+                            style={{ width: countNum > 0 ? `${(countNum / maxDistCount) * 100}%` : '0' }}
+                          >
+                            {countNum > 0 && <span className="font-bold">{countNum}</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {isGameOver && (

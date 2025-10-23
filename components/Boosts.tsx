@@ -47,10 +47,22 @@ export const Boosts: React.FC<BoostsProps> = ({
     isRevealDisabled,
     isEliminateDisabled,
 }) => {
+    const handleRevealClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        onReveal();
+        // Blur the button after clicking to prevent Enter key from triggering it again
+        e.currentTarget.blur();
+    };
+
+    const handleEliminateClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        onEliminate();
+        // Blur the button after clicking to prevent Enter key from triggering it again
+        e.currentTarget.blur();
+    };
+
     return (
         <div className="flex justify-center items-center gap-2 sm:gap-4 my-4 px-2">
             <button
-                onClick={onReveal}
+                onClick={handleRevealClick}
                 disabled={isRevealDisabled}
                 aria-label="Reveal a correct letter"
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-sky-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors text-sm sm:text-base"
@@ -60,7 +72,7 @@ export const Boosts: React.FC<BoostsProps> = ({
                 <span className="sm:hidden">Reveal</span>
             </button>
             <button
-                onClick={onEliminate}
+                onClick={handleEliminateClick}
                 disabled={isEliminateDisabled}
                 aria-label="Eliminate 3 incorrect letters"
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors text-sm sm:text-base"
