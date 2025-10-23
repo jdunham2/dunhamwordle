@@ -8,6 +8,14 @@ const coreUrlsToCache = [
   './wordle-answers-alphabetical.txt'
 ];
 
+// Dynamic asset files (updated on each build)
+const assetFiles = [
+  "./assets/index-DQlCU8oW.css",
+  "./assets/index-lr7Vn8-s.js",
+  "./assets/manifest-Cp7ezSgK.json",
+  "./assets/vite-CWPIoHfL.svg"
+];
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -16,13 +24,8 @@ self.addEventListener('install', (event) => {
         console.log('Opened cache');
         // Cache core files first
         return cache.addAll(coreUrlsToCache).then(() => {
-          // Then cache all assets from the current page
-          return cache.addAll([
-            './assets/vite-CWPIoHfL.svg',
-            './assets/manifest-Cp7ezSgK.json',
-            './assets/index-DQlCU8oW.css',
-            './assets/index-lr7Vn8-s.js'
-          ]).catch(err => {
+          // Then cache all assets
+          return cache.addAll(assetFiles).catch(err => {
             console.log('Some assets failed to cache:', err);
             // Don't fail the entire cache operation if some assets fail
           });
