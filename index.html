@@ -17,6 +17,11 @@
     />
     <title>Dunham Wordle</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -87,6 +92,20 @@
           });
         });
       }
+
+      // Initialize Add to Home Screen
+      document.addEventListener('DOMContentLoaded', function () {
+        window.AddToHomeScreenInstance = window.AddToHomeScreen({
+          appName: 'Dunham Wordle',
+          appNameDisplay: 'standalone',
+          appIconUrl: '/dunhamwordle/vite.svg',
+          assetUrl: 'https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/assets/img/',
+          maxModalDisplayCount: -1,
+          displayOptions: { showMobile: true, showDesktop: false },
+          allowClose: true,
+          showArrow: true
+        });
+      });
     </script>
   </body>
 </html>

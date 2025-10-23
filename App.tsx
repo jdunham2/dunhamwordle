@@ -189,6 +189,7 @@ function App() {
   // Track revealed hints: just store which indices were revealed
   const [revealedHintIndices, setRevealedHintIndices] = useState<Set<number>>(new Set());
   const [keySequence, setKeySequence] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
 
   const startNewGame = useCallback(async () => {
@@ -245,6 +246,19 @@ function App() {
       startNewGame();
     }
   }, [state.gameStatus, startNewGame]);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                             window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     document.title = "React Word Guess Game";
@@ -397,6 +411,12 @@ function App() {
     setShowStats(false);
   };
 
+  const handleDownload = () => {
+    if ((window as any).AddToHomeScreenInstance) {
+      (window as any).AddToHomeScreenInstance.show();
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden lg:justify-center" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
@@ -409,6 +429,11 @@ function App() {
            <button onClick={() => setShowStats(true)} aria-label="View statistics">
              <BarChart4 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
+          {isMobile && (
+            <button onClick={handleDownload} aria-label="Install app">
+              <Download className="h-5 w-5 text-gray-400 hover:text-white" />
+            </button>
+          )}
         </div>
         <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-wider">WORDLE</h1>
         <div className="flex items-center gap-2">
@@ -604,6 +629,14 @@ const RefreshCw = createIcon(
         <path d="M21 12A9 9 0 0 0 6 5.3L3 8" />
         <path d="M21 22v-6h-6" />
         <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7" />
+    </>
+);
+
+const Download = createIcon(
+    <>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7,10 12,15 17,10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
     </>
 );
 

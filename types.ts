@@ -41,3 +41,13 @@ export type GameAction =
   | { type: 'NEW_GAME' }
   | { type: 'SET_CURRENT_GUESS'; payload: string }
   | { type: 'UPDATE_KEY_STATUSES'; payload: KeyStatuses };
+
+// Add to Home Screen types
+declare global {
+  interface Window {
+    AddToHomeScreenInstance?: {
+      show: (locale?: string) => void;
+      clearModalDisplayCount: () => void;
+    };
+  }
+}
