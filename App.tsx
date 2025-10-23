@@ -441,7 +441,7 @@ function App() {
         )}
       </main>
 
-      <div className="flex-shrink-0 mt-auto">
+      <div className="flex-shrink-0">
         <Boosts
           onReveal={handleRevealBoost}
           onEliminate={handleEliminateBoost}
