@@ -48,24 +48,26 @@ export const Boosts: React.FC<BoostsProps> = ({
     isEliminateDisabled,
 }) => {
     return (
-        <div className="flex justify-center items-center gap-4 my-4">
+        <div className="flex justify-center items-center gap-2 sm:gap-4 my-4 px-2">
             <button
                 onClick={onReveal}
                 disabled={isRevealDisabled}
                 aria-label="Reveal a correct letter"
-                className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-sky-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors text-sm sm:text-base"
             >
-                <FaSearch className="h-5 w-5" />
-                <span>Reveal Letter</span>
+                <FaSearch className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Reveal Letter</span>
+                <span className="sm:hidden">Reveal</span>
             </button>
             <button
                 onClick={onEliminate}
                 disabled={isEliminateDisabled}
                 aria-label="Eliminate 3 incorrect letters"
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors text-sm sm:text-base"
             >
-                <FaBullseye className="h-5 w-5" />
-                <span>Eliminate Letters</span>
+                <FaBullseye className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Eliminate Letters</span>
+                <span className="sm:hidden">Eliminate</span>
             </button>
         </div>
     );

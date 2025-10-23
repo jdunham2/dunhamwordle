@@ -1,0 +1,1 @@
+.tile-hint{color:#fff9;border-style:dashed;border-color:#6b728099}@supports (height: 100dvh){.mobile-viewport{height:100dvh}}@supports not (height: 100dvh){.mobile-viewport{height:100vh}}@media(max-width:640px){.keyboard-container{padding-bottom:env(safe-area-inset-bottom,0px)}}

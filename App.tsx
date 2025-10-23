@@ -100,11 +100,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newKeyStatuses = { ...state.keyStatuses };
       const solutionChars = state.solution.split('');
-      
+
       guess.split('').forEach((letter, index) => {
         if (solutionChars[index] === letter) {
           newKeyStatuses[letter] = 'correct';
-          solutionChars[index] = '_'; 
+          solutionChars[index] = '_';
         }
       });
 
@@ -120,7 +120,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
            }
         }
       });
-      
+
       const isWin = guess === state.solution;
       const newGameStatus = isWin
         ? GameStatus.Won
@@ -204,7 +204,7 @@ function App() {
     const newSolution = solutions[Math.floor(Math.random() * solutions.length)];
     dispatch({ type: 'START_GAME', payload: { solution: newSolution } });
   }, []);
-  
+
   // Reset hints when a new row starts
   useEffect(() => {
     if (state.gameStatus === GameStatus.Playing) {
@@ -217,7 +217,7 @@ function App() {
       startNewGame();
     }
   }, [state.gameStatus, startNewGame]);
-  
+
   useEffect(() => {
     document.title = "React Word Guess Game";
     if (state.gameStatus === GameStatus.Won) {
@@ -236,7 +236,7 @@ function App() {
           return () => clearTimeout(timer);
       }
   }, [state.error]);
-  
+
   useEffect(() => {
     if (state.gameStatus === GameStatus.Won) {
       if(announcementsRef.current) announcementsRef.current.textContent = "Congratulations, you won!";
@@ -254,7 +254,7 @@ function App() {
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.gameStatus !== GameStatus.Playing) return;
-    
+
     // Check for cheat code
     if (key.length === 1 && key.match(/[a-z]/i)) {
         const newSequence = (keySequence + key).slice(-6);
@@ -267,7 +267,7 @@ function App() {
     } else {
         setKeySequence(''); // Reset on non-letter keys
     }
-    
+
     // Any other key press removes hint styling from view
     setHintIndices(new Set());
 
@@ -286,12 +286,12 @@ function App() {
             }
         }
       }
-      
+
       if (finalGuess.includes(' ')) {
         dispatch({ type: 'SET_ERROR', payload: { error: 'Not enough letters' } });
         return;
       }
-      
+
       dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: finalGuess } });
     } else if (key === 'Backspace') {
       dispatch({ type: 'BACKSPACE' });
@@ -334,15 +334,15 @@ function App() {
   const handleEliminateBoost = useCallback(() => {
     const solutionLetters = new Set(state.solution.split(''));
     const allKeys = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
-    
-    const eliminatable = allKeys.filter(key => 
+
+    const eliminatable = allKeys.filter(key =>
         !solutionLetters.has(key) && (!state.keyStatuses[key] || state.keyStatuses[key] === 'unused')
     );
 
     // Shuffle and pick 3
     const shuffled = eliminatable.sort(() => 0.5 - Math.random());
     const toEliminate = shuffled.slice(0, 3);
-    
+
     if (toEliminate.length > 0) {
         const newKeyStatuses: KeyStatuses = { ...state.keyStatuses };
         toEliminate.forEach(key => {
@@ -358,9 +358,9 @@ function App() {
       // Check if this position has been correctly guessed in any previous row
       return !state.guesses.some(g => g && g[i] === state.solution[i]);
   });
-  
+
   const winPercentage = state.stats.gamesPlayed > 0 ? Math.round((state.stats.wins / state.stats.gamesPlayed) * 100) : 0;
-  
+
   const distEntries = Object.entries(state.stats.guessDistribution);
   const maxDistCount = Math.max(...distEntries.map(([, count]) => count), 1);
 
@@ -370,7 +370,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-lg mx-auto p-4 font-sans">
+    <div className="flex flex-col min-h-screen max-w-lg mx-auto p-4 font-sans mobile-viewport">
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
 
       <header className="flex items-center justify-between border-b border-gray-600 pb-4 mb-4">
@@ -390,7 +390,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center gap-4">
+      <main className="flex-grow flex flex-col items-center justify-center gap-4 min-h-0">
          {state.error && (
             <div className="absolute top-20 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake">
                 {state.error}
@@ -418,7 +418,7 @@ function App() {
         isRevealDisabled={isGameOver || !canReveal}
         isEliminateDisabled={isGameOver}
       />
-      
+
       <AdBanner triggerShow={state.gameStatus === GameStatus.Won || state.gameStatus === GameStatus.Lost} />
 
       <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
@@ -479,7 +479,7 @@ function App() {
                         <p>The word was: <strong className="text-2xl tracking-widest">{state.solution}</strong></p>
                     </div>
                 )}
-                
+
                 <h2 className="text-2xl font-bold mb-6 text-center">Statistics</h2>
                 <div className="flex justify-around text-center mb-6">
                     <div>
@@ -499,7 +499,7 @@ function App() {
                         <p className="text-xs text-gray-400">Max Streak</p>
                     </div>
                 </div>
-                
+
                 <h3 className="text-xl font-bold mb-4 text-center">Guess Distribution</h3>
                 <div className="space-y-2 px-4">
                   {distEntries.map(([guesses, count]) => (

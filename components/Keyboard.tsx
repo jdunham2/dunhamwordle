@@ -47,7 +47,7 @@ const Key: React.FC<{
 
 export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) => {
   return (
-    <div className="flex flex-col gap-2 w-full mt-4" role="group" aria-label="On-screen keyboard">
+    <div className="flex flex-col gap-2 w-full mt-4 keyboard-container" role="group" aria-label="On-screen keyboard">
       {KEY_ROWS.map((row, i) => (
         <div key={i} className="flex justify-center gap-1.5 w-full">
             {i === 1 && <div className="flex-grow max-w-[20px] sm:max-w-[30px]" />}
