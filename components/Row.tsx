@@ -15,7 +15,7 @@ interface RowProps {
 const getTileStatus = (letter: string, index: number, solution: string, guess: string): TileStatus => {
     if (!letter) return 'empty';
     if (!guess.includes(letter)) return 'editing'; // Should not happen with submitted rows
-    
+
     if (solution[index] === letter) {
         return 'correct';
     }
@@ -37,7 +37,7 @@ const RowComponent: React.FC<RowProps> = ({ guess, solution, isSubmitted, isInva
   const animationClass = isInvalid ? 'animate-shake' : '';
 
   return (
-    <div className={`grid grid-cols-5 gap-1.5 ${animationClass}`} role="row">
+    <div className={`grid grid-cols-5 gap-1 sm:gap-1.5 ${animationClass}`} role="row">
       {paddedGuess.split('').map((letter, i) => {
         const status: TileStatus = isSubmitted
           ? getTileStatus(letter, i, solution, guess)

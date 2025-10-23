@@ -60,7 +60,7 @@ export const Boosts: React.FC<BoostsProps> = ({
     };
 
     return (
-        <div className="flex justify-center items-center gap-2 sm:gap-4 my-4 px-2">
+        <div className="flex justify-center items-center gap-2 sm:gap-4 my-2 sm:my-4 px-2">
             <button
                 onClick={handleRevealClick}
                 disabled={isRevealDisabled}

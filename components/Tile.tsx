@@ -35,7 +35,7 @@ const TileComponent: React.FC<TileProps> = ({ letter, status, isSubmitted, index
 
     return (
         <div
-            className={`w-14 h-14 sm:w-16 sm:h-16 border-2 flex items-center justify-center text-3xl font-bold uppercase ${statusClasses[status]} ${animationClass} ${hintClass}`}
+            className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 flex items-center justify-center text-2xl sm:text-3xl font-bold uppercase ${statusClasses[status]} ${animationClass} ${hintClass}`}
             style={{ animationDelay }}
             aria-label={label}
             role="gridcell"

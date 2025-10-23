@@ -30,12 +30,12 @@ const Key: React.FC<{
   return (
     <button
       onClick={() => onClick(value)}
-      className={`h-14 rounded font-bold uppercase flex items-center justify-center text-sm ${
-        isWideKey ? 'flex-grow px-2' : 'w-8 sm:w-11'
+      className={`h-12 sm:h-14 rounded font-bold uppercase flex items-center justify-center text-xs sm:text-sm ${
+        isWideKey ? 'flex-grow px-1 sm:px-2' : 'w-7 sm:w-8 md:w-11'
       } ${statusClasses[status]}`}
     >
       {value === 'Backspace' ? (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 002.828 0L21 12M3 12l6.414-6.414a2 2 0 012.828 0L21 12" />
         </svg>
       ) : (
@@ -47,10 +47,10 @@ const Key: React.FC<{
 
 export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) => {
   return (
-    <div className="flex flex-col gap-2 w-full mt-4 keyboard-container" role="group" aria-label="On-screen keyboard">
+    <div className="flex flex-col gap-1.5 sm:gap-2 w-full mt-2 sm:mt-4 keyboard-container" role="group" aria-label="On-screen keyboard">
       {KEY_ROWS.map((row, i) => (
-        <div key={i} className="flex justify-center gap-1.5 w-full">
-            {i === 1 && <div className="flex-grow max-w-[20px] sm:max-w-[30px]" />}
+        <div key={i} className="flex justify-center gap-1 sm:gap-1.5 w-full">
+            {i === 1 && <div className="flex-grow max-w-[12px] sm:max-w-[20px] md:max-w-[30px]" />}
             {row.map((key) => (
                 <Key
                     key={key}
