@@ -399,29 +399,29 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans mobile-viewport">
+    <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
 
-      <header className="flex items-center justify-between border-b border-gray-600 pb-2 sm:pb-4 mb-2 sm:mb-4">
-        <div className="flex items-center gap-2 sm:gap-4">
+      <header className="flex items-center justify-between border-b border-gray-600 pb-2 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <button onClick={() => setShowHelp(true)} aria-label="How to play">
-             <HelpCircle className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 hover:text-white" />
+             <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
            <button onClick={() => setShowStats(true)} aria-label="View statistics">
-             <BarChart4 className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 hover:text-white" />
+             <BarChart4 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-bold tracking-wider">WORDLE</h1>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-wider">WORDLE</h1>
+        <div className="flex items-center gap-2">
           <button onClick={() => dispatch({ type: 'NEW_GAME' })} aria-label="New Game">
-             <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 hover:text-white" />
+             <RefreshCw className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center gap-2 sm:gap-4 min-h-0">
+      <main className="flex flex-col items-center relative flex-shrink-0">
          {state.error && (
-            <div className="absolute top-16 sm:top-20 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake">
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake whitespace-nowrap">
                 {state.error}
             </div>
          )}
@@ -441,16 +441,18 @@ function App() {
         )}
       </main>
 
-      <Boosts
-        onReveal={handleRevealBoost}
-        onEliminate={handleEliminateBoost}
-        isRevealDisabled={isGameOver || !canReveal}
-        isEliminateDisabled={isGameOver}
-      />
+      <div className="flex-shrink-0 mt-auto">
+        <Boosts
+          onReveal={handleRevealBoost}
+          onEliminate={handleEliminateBoost}
+          isRevealDisabled={isGameOver || !canReveal}
+          isEliminateDisabled={isGameOver}
+        />
 
-      <AdBanner triggerShow={state.gameStatus === GameStatus.Won || state.gameStatus === GameStatus.Lost} />
+        <AdBanner triggerShow={state.gameStatus === GameStatus.Won || state.gameStatus === GameStatus.Lost} />
 
-      <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
+        <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
+      </div>
 
       {showHelp && (
         <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>

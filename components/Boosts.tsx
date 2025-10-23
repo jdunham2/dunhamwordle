@@ -60,14 +60,14 @@ export const Boosts: React.FC<BoostsProps> = ({
     };
 
     return (
-        <div className="flex justify-center items-center gap-2 sm:gap-4 my-2 sm:my-4 px-2">
+        <div className="flex justify-center items-center gap-2 sm:gap-4 my-1 sm:my-2 px-2">
             <button
                 onClick={handleRevealClick}
                 disabled={isRevealDisabled}
                 aria-label="Reveal a correct letter"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-sky-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-sky-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors text-xs sm:text-sm"
             >
-                <FaSearch className="h-4 w-4 sm:h-5 sm:w-5" />
+                <FaSearch className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Reveal Letter</span>
                 <span className="sm:hidden">Reveal</span>
             </button>
@@ -75,9 +75,9 @@ export const Boosts: React.FC<BoostsProps> = ({
                 onClick={handleEliminateClick}
                 disabled={isEliminateDisabled}
                 aria-label="Eliminate 3 incorrect letters"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-indigo-600 text-white font-bold rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors text-xs sm:text-sm"
             >
-                <FaBullseye className="h-4 w-4 sm:h-5 sm:w-5" />
+                <FaBullseye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Eliminate Letters</span>
                 <span className="sm:hidden">Eliminate</span>
             </button>
