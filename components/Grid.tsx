@@ -14,7 +14,7 @@ interface GridProps {
 
 export const Grid: React.FC<GridProps> = ({ guesses, currentGuess, currentGuessIndex, solution, isInvalidGuess }) => {
   return (
-    <div className="grid grid-rows-6 gap-1 sm:gap-1.5" role="grid" aria-label="Game board">
+    <div className="grid grid-rows-6 gap-2 sm:gap-2.5" role="grid" aria-label="Game board">
       {Array.from({ length: MAX_GUESSES }).map((_, i) => {
         const isCurrentGuessRow = i === currentGuessIndex;
         const guess = isCurrentGuessRow ? currentGuess : guesses[i] ?? '';
