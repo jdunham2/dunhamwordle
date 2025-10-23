@@ -22,4 +22,14 @@
   .keyboard-container {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+/* Prevent zoom on mobile */
+body {
+  touch-action: manipulation;
+}
+
+/* Ensure full width keyboard on mobile */
+.keyboard-container button {
+  min-height: 48px;
+  /* iOS recommended touch target */
+}
 }

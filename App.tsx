@@ -399,10 +399,10 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden lg:justify-center" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
 
-      <header className="flex items-center justify-between border-b border-gray-600 pb-2 mb-2 flex-shrink-0">
+      <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
         <div className="flex items-center gap-2">
           <button onClick={() => setShowHelp(true)} aria-label="How to play">
              <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
@@ -419,7 +419,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center relative flex-shrink-0">
+      <main className="flex flex-col items-center relative flex-shrink-0 mb-1 sm:mb-2">
          {state.error && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake whitespace-nowrap">
                 {state.error}
@@ -453,6 +453,7 @@ function App() {
 
         <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
       </div>
+
 
       {showHelp && (
         <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
