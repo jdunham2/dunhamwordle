@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Dunham Wordle 🎮
 
-# Run and deploy your AI Studio app
+A custom version of Wordle created for my daughter to enjoy with special boosts and no advertisements.
 
-This contains everything you need to run your app locally.
+## About This Game
 
-View your app in AI Studio: https://ai.studio/apps/drive/1CaEY5jeTNjfeCT9MJCLkbnqnT1AQyeaM
+This is a personalized Wordle game built with React and TypeScript, featuring:
+- **Special Boosts**: Reveal hints and eliminate wrong letters to help with tricky words
+- **No Ads**: Clean, distraction-free gameplay experience
+- **Mobile-Friendly**: Optimized for phones and tablets with easy-to-tap keys
+- **Installable**: Can be added to your home screen like a native app
+
+## Play the Game
+
+🎯 **[Play Dunham Wordle](https://jdunham2.github.io/dunhamwordle/)**
+
+## Features
+
+- 6 tries to guess a 5-letter word
+- Color-coded feedback (green = correct, yellow = wrong position, gray = not in word)
+- Hint system to reveal letters
+- Letter elimination to remove incorrect letters
+- Statistics tracking
+- Responsive design for all devices
+- Progressive Web App (PWA) support
+
+## Technical Details
+
+Built with:
+- React 19
+- TypeScript
+- Tailwind CSS
+- Vite
+- Service Worker for offline support
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
-
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+3. Open [http://localhost:5173](http://localhost:5173) in your browser
+
+---
+
+*Made with ❤️ for family game time*
