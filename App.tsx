@@ -301,7 +301,7 @@ function App() {
     if (key.length === 1 && key.match(/[a-z]/i)) {
         const newSequence = (keySequence + key).slice(-6);
         setKeySequence(newSequence);
-        if (newSequence.toUpperCase() === 'JESHUA') {
+        if (newSequence.toUpperCase() === 'JESHUA' || newSequence.toUpperCase() === 'AMARA') {
             dispatch({ type: 'SET_CURRENT_GUESS', payload: state.solution });
             setKeySequence(''); // Reset after use
             return; // Exit to avoid processing as a normal letter
