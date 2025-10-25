@@ -213,7 +213,15 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.Unlimited);
   const [showWordOfTheDayConfirm, setShowWordOfTheDayConfirm] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
 
+  // Enable audio on first user interaction
+  const enableAudio = useCallback(() => {
+    if (!audioEnabled) {
+      setAudioEnabled(true);
+      console.log('Audio enabled for celebrations');
+    }
+  }, [audioEnabled]);
 
   const startNewGame = useCallback(async (mode: GameMode = GameMode.Unlimited) => {
     if (!wordLists.current) {
@@ -331,6 +339,7 @@ function App() {
 
 
   const handleKeyPress = useCallback((key: string) => {
+    enableAudio(); // Enable audio on first key press
     if (state.gameStatus !== GameStatus.Playing) return;
 
     // Check for cheat code
@@ -468,10 +477,50 @@ function App() {
 
   // Confetti celebration function
   const triggerCelebration = (guessCount: number) => {
+    // Play audio celebration
+    const playAudio = (audioFile: string) => {
+      if (!audioEnabled) {
+        console.log('Audio not enabled yet, skipping:', audioFile);
+        return;
+      }
+
+      console.log('Attempting to play audio:', audioFile);
+
+      try {
+        const audio = new Audio(audioFile);
+        audio.volume = 0.8; // Set volume to 80%
+        audio.preload = 'auto';
+
+        // Add event listeners for debugging
+        audio.addEventListener('loadstart', () => console.log('Audio load started:', audioFile));
+        audio.addEventListener('canplay', () => console.log('Audio can play:', audioFile));
+        audio.addEventListener('error', (e) => console.log('Audio error:', e, audioFile));
+
+        // Try to play the audio
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log('Audio played successfully:', audioFile);
+          }).catch(err => {
+            console.log('Audio play failed:', err, 'File:', audioFile);
+            // Try again with user gesture simulation
+            setTimeout(() => {
+              audio.play().catch(e => console.log('Retry failed:', e, 'File:', audioFile));
+            }, 100);
+          });
+        }
+      } catch (err) {
+        console.log('Audio creation failed:', err, 'File:', audioFile);
+      }
+    };
+
     if (typeof window !== 'undefined' && (window as any).confetti) {
       const confetti = (window as any).confetti;
 
       if (guessCount === 1) {
+        // Play special audio for 1-guess win
+        playAudio('/dunhamwordle/audio/mom-awesome.mp3');
         // EPIC celebration for getting it in 1 guess!
         // Multiple bursts from different positions
         confetti({
@@ -511,6 +560,8 @@ function App() {
           });
         }, 800);
       } else {
+        // Play regular audio for other wins
+        playAudio('/dunhamwordle/audio/mom-you-did-it.mp3');
         // Regular celebration for other wins
         confetti({
           particleCount: 150,
@@ -528,10 +579,10 @@ function App() {
 
       <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowHelp(true)} aria-label="How to play">
+          <button onClick={() => { enableAudio(); setShowHelp(true); }} aria-label="How to play">
              <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-           <button onClick={() => setShowStats(true)} aria-label="View statistics">
+           <button onClick={() => { enableAudio(); setShowStats(true); }} aria-label="View statistics">
              <BarChart4 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
           {isMobile && (
@@ -542,10 +593,10 @@ function App() {
         </div>
         <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-wider">WORDLE</h1>
         <div className="flex items-center gap-2">
-          <button onClick={handleWordOfTheDayClick} aria-label="Word of the Day">
+          <button onClick={() => { enableAudio(); handleWordOfTheDayClick(); }} aria-label="Word of the Day">
             <Calendar className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-          <button onClick={() => dispatch({ type: 'NEW_GAME' })} aria-label="New Game">
+          <button onClick={() => { enableAudio(); dispatch({ type: 'NEW_GAME' }); }} aria-label="New Game">
              <RefreshCw className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
         </div>

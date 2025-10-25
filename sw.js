@@ -8,7 +8,9 @@ const coreUrlsToCache = [
   `${GHPATH}/manifest.json`,
   `${GHPATH}/vite.svg`,
   `${GHPATH}/wordle-allowed-guesses.txt`,
-  `${GHPATH}/wordle-answers-alphabetical.txt`
+  `${GHPATH}/wordle-answers-alphabetical.txt`,
+  `${GHPATH}/audio/mom-awesome.mp3`,
+  `${GHPATH}/audio/mom-you-did-it.mp3`
 ];
 
 self.addEventListener('install', (event) => {
