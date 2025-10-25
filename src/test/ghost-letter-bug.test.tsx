@@ -73,10 +73,10 @@ describe('Ghost Letter Bug - New Game', () => {
     // Check that NO ghost letters are showing in the new game
     const newTiles = screen.getAllByRole('gridcell');
     const newFirstTile = newTiles[0];
-    
+
     // The first tile should be empty - no ghost letter from previous game
     expect(newFirstTile).toHaveTextContent('');
-    
+
     // All tiles in the first row should be empty
     const firstRowTiles = newTiles.slice(0, 5);
     firstRowTiles.forEach((tile, index) => {
@@ -86,7 +86,7 @@ describe('Ghost Letter Bug - New Game', () => {
     // Verify that clicking reveal again would add a hint for the NEW game
     const revealButtonNew = screen.getByText('Reveal');
     await user.click(revealButtonNew);
-    
+
     await waitFor(() => {
       const tilesAfterReveal = screen.getAllByRole('gridcell');
       const firstTileAfterReveal = tilesAfterReveal[0];
