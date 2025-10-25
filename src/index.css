@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .tile-hint {
     color: rgba(255, 255, 255, 0.6);
     border-style: dashed;
@@ -23,6 +27,7 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
 /* Prevent zoom on mobile */
 body {
   touch-action: manipulation;

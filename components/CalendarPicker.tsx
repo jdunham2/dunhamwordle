@@ -4,10 +4,11 @@ import { X } from 'lucide-react';
 interface CalendarPickerProps {
   onClose: () => void;
   onSelectDate: (date: Date) => void;
+  onLeave: () => void;
   completions: { [dateKey: string]: { completed: boolean; guesses?: number; solution?: string } };
 }
 
-export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelectDate, completions }) => {
+export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelectDate, onLeave, completions }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [forceRender, setForceRender] = useState(0);
   const currentDate = new Date();
@@ -185,7 +186,7 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
             PLAY
           </button>
           <button
-            onClick={onClose}
+            onClick={onLeave}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
           >
             LEAVE

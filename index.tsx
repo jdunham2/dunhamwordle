@@ -5,7 +5,12 @@ import App from './App';
 // Register Service Worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
+    // Use different paths for localhost vs production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const swPath = isLocalhost ? '/sw.js' : '/dunhamwordle/sw.js';
+    const scope = isLocalhost ? '/' : '/dunhamwordle/';
+
+    navigator.serviceWorker.register(swPath, { scope })
       .then(registration => {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
       })

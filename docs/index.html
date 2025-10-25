@@ -6,7 +6,7 @@
     <link rel="manifest" href="/dunhamwordle/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#18181b" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dunham Wordle">
     <link rel="apple-touch-icon" href="/dunhamwordle/vite.svg">
@@ -17,12 +17,6 @@
     />
     <title>Dunham Wordle</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.css"
-    />
-    <script src="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -60,6 +54,12 @@
         }
       }
     </script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
   <script type="importmap">
 {
@@ -73,8 +73,8 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-CammiBuk.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-_4aaQO-t.css">
+  <script type="module" crossorigin src="./assets/index-PatQ1HGg.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BwvGxbNA.css">
 </head>
   <body class="bg-zinc-900 text-white">
     <div id="root"></div>
@@ -86,13 +86,18 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/dunhamwordle/sw.js', {
-            scope: '/dunhamwordle/'
-          }).then((registration) => {
-            console.log('SW registered: ', registration);
-          }).catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-          });
+          // Use different paths for localhost vs production
+          const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const swPath = isLocalhost ? '/sw.js' : '/dunhamwordle/sw.js';
+          const scope = isLocalhost ? '/' : '/dunhamwordle/';
+
+          navigator.serviceWorker.register(swPath, { scope })
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
         });
       }
 

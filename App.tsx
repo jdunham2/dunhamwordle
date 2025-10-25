@@ -3,6 +3,7 @@ import { Grid } from './components/Grid';
 import { Keyboard } from './components/Keyboard';
 import { Boosts } from './components/Boosts';
 import { CalendarPicker } from './components/CalendarPicker';
+import { StartScreen } from './components/StartScreen';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
@@ -289,6 +290,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.Unlimited);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showStartScreen, setShowStartScreen] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [showMilesExplosion, setShowMilesExplosion] = useState(false);
   const [showTraceyMessage, setShowTraceyMessage] = useState(false);
@@ -440,6 +442,40 @@ function App() {
             setGameExploded(true);
             setKeySequence(''); // Reset after use
 
+            // Add CSS custom properties for explosion animation
+            const addExplosionStyles = () => {
+              if (typeof document === 'undefined') return; // Skip in test environment
+              const tiles = document.querySelectorAll('[role="gridcell"]');
+              const keys = document.querySelectorAll('.keyboard-container button');
+
+              // Add random scatter values to tiles
+              tiles.forEach((tile, index) => {
+                const scatterX = (Math.random() - 0.5) * 200;
+                const scatterY = (Math.random() - 0.5) * 200;
+                const rotation = (Math.random() - 0.5) * 720;
+
+                (tile as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
+                (tile as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
+                (tile as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
+                (tile as HTMLElement).classList.add('tile-exploded');
+              });
+
+              // Add random scatter values to keys
+              keys.forEach((key, index) => {
+                const scatterX = (Math.random() - 0.5) * 300;
+                const scatterY = (Math.random() - 0.5) * 300;
+                const rotation = (Math.random() - 0.5) * 720;
+
+                (key as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
+                (key as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
+                (key as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
+                (key as HTMLElement).classList.add('key-exploded');
+              });
+            };
+
+            // Apply styles after a short delay to ensure DOM is ready
+            setTimeout(addExplosionStyles, 100);
+
             // Auto-reset after 3 seconds
             setTimeout(() => {
                 setShowMilesExplosion(false);
@@ -577,6 +613,22 @@ function App() {
 
   const handlePlayUnlimited = () => {
     startNewGame(GameMode.Unlimited);
+  };
+
+  // Start screen handlers
+  const handleStartUnlimited = () => {
+    setShowStartScreen(false);
+    startNewGame(GameMode.Unlimited);
+  };
+
+  const handleStartWordOfTheDay = () => {
+    setShowStartScreen(false);
+    setShowCalendar(true);
+  };
+
+  const handleShowStats = () => {
+    setShowStartScreen(false);
+    setShowStats(true);
   };
 
   // Confetti celebration function
@@ -921,10 +973,22 @@ function App() {
         </div>
       )}
 
+      {showStartScreen && (
+        <StartScreen
+          onStartUnlimited={handleStartUnlimited}
+          onStartWordOfTheDay={handleStartWordOfTheDay}
+          onShowStats={handleShowStats}
+        />
+      )}
+
       {showCalendar && (
         <CalendarPicker
           onClose={() => setShowCalendar(false)}
           onSelectDate={handleSelectDate}
+          onLeave={() => {
+            setShowCalendar(false);
+            startNewGame(); // Start new unlimited game
+          }}
           completions={state.wordOfTheDayCompletions}
         />
       )}
@@ -932,39 +996,67 @@ function App() {
       {/* Miles Easter Egg - Explosion */}
       {showMilesExplosion && (
         <div className="fixed inset-0 z-50 pointer-events-none">
+          {/* Background explosion effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 to-orange-500 opacity-90 animate-pulse"></div>
+
           {/* Explosion particles */}
           <div className="absolute inset-0">
-            {Array.from({ length: 50 }, (_, i) => (
+            {Array.from({ length: 100 }, (_, i) => (
               <div
                 key={i}
-                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
+                className="absolute w-3 h-3 bg-yellow-400 rounded-full animate-ping"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
                   animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${1 + Math.random() * 2}s`
+                  animationDuration: `${1 + Math.random() * 2}s`,
+                  transform: `scale(${0.5 + Math.random() * 1.5})`
+                }}
+              />
+            ))}
+            {Array.from({ length: 50 }, (_, i) => (
+              <div
+                key={`red-${i}`}
+                className="absolute w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${0.5 + Math.random() * 1}s`,
+                  transform: `scale(${0.5 + Math.random() * 1.5})`
                 }}
               />
             ))}
             {Array.from({ length: 30 }, (_, i) => (
               <div
-                key={`red-${i}`}
-                className="absolute w-1 h-1 bg-red-500 rounded-full animate-pulse"
+                key={`orange-${i}`}
+                className="absolute w-1 h-1 bg-orange-400 rounded-full animate-bounce"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
                   animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${0.5 + Math.random() * 1}s`
+                  animationDuration: `${0.3 + Math.random() * 0.7}s`
                 }}
               />
             ))}
           </div>
 
-          {/* BOOM text */}
+          {/* BOOM text with multiple effects */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="text-8xl font-bold text-yellow-400 animate-bounce">
+            <div className="text-9xl font-bold text-yellow-400 animate-bounce drop-shadow-2xl">
               💥 BOOM! 💥
             </div>
+            <div className="text-6xl font-bold text-red-500 animate-pulse mt-4 drop-shadow-lg">
+              SIQUIJOR!
+            </div>
+          </div>
+
+          {/* Screen crack effect */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/4 w-1 h-full bg-red-600 opacity-60 animate-pulse"></div>
+            <div className="absolute top-0 right-1/3 w-1 h-full bg-red-600 opacity-60 animate-pulse" style={{animationDelay: '0.5s'}}></div>
+            <div className="absolute top-1/3 left-0 w-full h-1 bg-red-600 opacity-60 animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-1/4 left-0 w-full h-1 bg-red-600 opacity-60 animate-pulse" style={{animationDelay: '1.5s'}}></div>
           </div>
         </div>
       )}
