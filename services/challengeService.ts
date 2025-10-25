@@ -128,13 +128,13 @@ export function createWordChallenge(word: string, gameMode: GameMode = GameMode.
 }
 
 // Generate shareable URL for a challenge
-export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.origin): string {
+export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.href.split('?')[0]): string {
   const encoded = encodeWordChallenge(challenge);
   return `${baseUrl}?challenge=${encoded}`;
 }
 
 // Generate shareable URL for a challenge result
-export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.origin): string {
+export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.href.split('?')[0]): string {
   const encoded = encodeChallengeResult(result);
   return `${baseUrl}?result=${encoded}`;
 }
