@@ -25,8 +25,8 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
 
   const isToday = (date: Date): boolean => {
     const today = new Date();
-    return date.getDate() === today.getDate() && 
-           date.getMonth() === today.getMonth() && 
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
            date.getFullYear() === today.getFullYear();
   };
 
@@ -73,25 +73,21 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
       const completionStatus = getCompletionStatus(date);
-      const isSelected = selectedDate.getDate() === day && 
-                       selectedDate.getMonth() === currentMonth && 
+      const isSelected = selectedDate.getDate() === day &&
+                       selectedDate.getMonth() === currentMonth &&
                        selectedDate.getFullYear() === currentYear;
 
       let dayClasses = "h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium cursor-pointer transition-colors ";
       
-      if (isSelected) {
+      if (completionStatus === 'completed') {
+        // Completed days are always green, even if selected or today
+        dayClasses += "bg-emerald-500 text-white hover:bg-emerald-600";
+      } else if (isSelected) {
         dayClasses += "bg-blue-500 text-white";
       } else if (isToday(date)) {
-        // Current day: blue if not completed, green if completed
-        if (completionStatus === 'completed') {
-          dayClasses += "bg-emerald-500 text-white";
-        } else {
-          dayClasses += "bg-blue-400 text-white";
-        }
-      } else if (completionStatus === 'completed') {
-        dayClasses += "bg-emerald-500 text-white hover:bg-emerald-600";
+        dayClasses += "bg-blue-400 text-white";
       } else if (completionStatus === 'not-completed') {
-        dayClasses += "bg-rose-400 text-white hover:bg-rose-500";
+        dayClasses += "bg-red-800 text-red-200 hover:bg-red-700";
       } else if (completionStatus === 'future') {
         dayClasses += "bg-gray-600 text-gray-400 cursor-not-allowed";
       }
@@ -129,9 +125,9 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
   return (
     <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-zinc-800 p-6 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
-        <button 
-          className="absolute top-4 right-4 text-gray-400 hover:text-white" 
-          onClick={onClose} 
+        <button
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          onClick={onClose}
           aria-label="Close calendar"
         >
           <X className="h-6 w-6"/>
@@ -146,7 +142,7 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
           <h3 className="text-lg font-semibold text-center mb-4">
             {monthNames[currentMonth]} {currentYear}
           </h3>
-          
+
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map(day => (
               <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-400">
@@ -154,7 +150,7 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
               </div>
             ))}
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1" key={forceRender}>
             {renderCalendarDays()}
           </div>
@@ -166,12 +162,8 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
             <span className="text-xs text-gray-300">Completed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-rose-400 rounded-full"></div>
+            <div className="w-3 h-3 bg-red-800 rounded-full"></div>
             <span className="text-xs text-gray-300">Not completed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-            <span className="text-xs text-gray-300">Today</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-600 rounded-full"></div>

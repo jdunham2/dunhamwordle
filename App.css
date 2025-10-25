@@ -32,4 +32,52 @@ body {
   min-height: 48px;
   /* iOS recommended touch target */
 }
+
+/* Miles Easter Egg - Game Explosion Animation */
+.game-exploded {
+  animation: scatter 2s ease-out forwards;
+}
+
+@keyframes scatter {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--scatter-x, 0), var(--scatter-y, 0)) rotate(var(--scatter-rotation, 0deg));
+    opacity: 0.3;
+  }
+}
+
+.tile-exploded {
+  animation: tile-scatter 2s ease-out forwards;
+}
+
+.key-exploded {
+  animation: key-scatter 2s ease-out forwards;
+}
+
+@keyframes tile-scatter {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(
+      calc(var(--scatter-x, 0) * 1px), 
+      calc(var(--scatter-y, 0) * 1px)
+    ) rotate(var(--scatter-rotation, 0deg));
+  }
+}
+
+@keyframes key-scatter {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(
+      calc(var(--scatter-x, 0) * 1px), 
+      calc(var(--scatter-y, 0) * 1px)
+    ) rotate(var(--scatter-rotation, 0deg));
+  }
+}
 }

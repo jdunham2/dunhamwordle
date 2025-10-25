@@ -5,6 +5,7 @@ import { KeyStatuses, KeyStatus } from '../types';
 interface KeyboardProps {
   onKeyPress: (key: string) => void;
   keyStatuses: KeyStatuses;
+  exploded?: boolean;
 }
 
 const KEY_ROWS = [
@@ -45,13 +46,13 @@ const Key: React.FC<{
   );
 };
 
-export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) => {
+export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses, exploded = false }) => {
   return (
     // IMPORTANT: Keyboard layout settings - DO NOT CHANGE without explicit request
     // w-full: Makes keyboard take full available width
     // flex (not justify-center): Allows keys to stretch to fill width
     // px-1: Small padding for edge spacing
-    <div className="flex flex-col gap-0.5 sm:gap-1 w-full keyboard-container" role="group" aria-label="On-screen keyboard">
+    <div className={`flex flex-col gap-0.5 sm:gap-1 w-full keyboard-container ${exploded ? 'game-exploded' : ''}`} role="group" aria-label="On-screen keyboard">
       {KEY_ROWS.map((row, i) => (
         <div key={i} className="flex gap-0.5 sm:gap-1 w-full px-1">
             {i === 1 && <div className="w-2 sm:w-3 md:w-4" />}

@@ -6,6 +6,7 @@ import { CalendarPicker } from './components/CalendarPicker';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
+import Explode from 'react-explode';
 import './App.css';
 
 
@@ -290,6 +291,9 @@ function App() {
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.Unlimited);
   const [showCalendar, setShowCalendar] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [showMilesExplosion, setShowMilesExplosion] = useState(false);
+  const [showTraceyMessage, setShowTraceyMessage] = useState(false);
+  const [gameExploded, setGameExploded] = useState(false);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -429,6 +433,20 @@ function App() {
             dispatch({ type: 'SET_CURRENT_GUESS', payload: state.solution });
             setKeySequence(''); // Reset after use
             return; // Exit to avoid processing as a normal letter
+        }
+        
+        // Easter eggs
+        if (newSequence.toUpperCase() === 'MILES') {
+            setShowMilesExplosion(true);
+            setGameExploded(true);
+            setKeySequence(''); // Reset after use
+            return;
+        }
+        
+        if (newSequence.toUpperCase() === 'TRACEY') {
+            setShowTraceyMessage(true);
+            setKeySequence(''); // Reset after use
+            return;
         }
     } else {
         setKeySequence(''); // Reset on non-letter keys
@@ -742,13 +760,14 @@ function App() {
             <p>Loading...</p>
         ) : (
              <AppContext.Provider value={{ hintIndices: getVisibleHints(), solution: state.solution }}>
-                 <Grid
-                    guesses={state.guesses}
-                    currentGuess={state.currentGuess}
-                    currentGuessIndex={state.currentGuessIndex}
-                    solution={state.solution}
-                    isInvalidGuess={state.isInvalidGuess}
-                />
+                   <Grid
+                      guesses={state.guesses}
+                      currentGuess={state.currentGuess}
+                      currentGuessIndex={state.currentGuessIndex}
+                      solution={state.solution}
+                      isInvalidGuess={state.isInvalidGuess}
+                      exploded={gameExploded}
+                  />
              </AppContext.Provider>
         )}
       </main>
@@ -761,7 +780,7 @@ function App() {
           isEliminateDisabled={isGameOver}
         />
 
-        <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} />
+        <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} exploded={gameExploded} />
       </div>
 
 
@@ -901,6 +920,42 @@ function App() {
           onSelectDate={handleSelectDate}
           completions={state.wordOfTheDayCompletions}
         />
+      )}
+
+      {/* Miles Easter Egg - Explosion */}
+      {showMilesExplosion && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          <Explode
+            onComplete={() => {
+              setShowMilesExplosion(false);
+              // Reset the game after explosion
+              setTimeout(() => {
+                setGameExploded(false);
+                dispatch({ type: 'NEW_GAME' });
+              }, 1000);
+            }}
+            duration={2000}
+            particleCount={100}
+            colors={['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff']}
+          />
+        </div>
+      )}
+
+      {/* Tracey Easter Egg - Love Message */}
+      {showTraceyMessage && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative text-center">
+            <h2 className="text-3xl font-bold mb-4 text-pink-400">I love you Mom!</h2>
+            <p className="text-xl mb-6 text-gray-300">The word was:</p>
+            <p className="text-4xl font-bold tracking-widest text-white mb-6">{state.solution}</p>
+            <button
+              onClick={() => setShowTraceyMessage(false)}
+              className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-6 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Static SEO content section */}
