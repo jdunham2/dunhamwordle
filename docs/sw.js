@@ -5,15 +5,15 @@ const coreUrlsToCache = [
   './',
   './index.html',
   './wordle-allowed-guesses.txt',
-  './wordle-answers-alphabetical.txt'
+  './wordle-answers-alphabetical.txt',
+  './audio/mom-awesome.mp3',
+  './audio/mom-you-did-it.mp3'
 ];
 
 // Dynamic asset files (updated on each build)
 const assetFiles = [
-  "./assets/index-B2_zvMPc.js",
-  "./assets/index-DQlCU8oW.css",
-  "./assets/manifest-CUqjQ4UO.json",
-  "./assets/vite-CWPIoHfL.svg"
+  "./assets/index-BXLkjf6h.js",
+  "./assets/index-aj0e-_i-.css"
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { copyFileSync, existsSync, readdirSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, readdirSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 // https://vitejs.dev/config/
@@ -17,11 +17,32 @@ export default defineConfig({
           'wordle-allowed-guesses.txt'
         ];
 
+        // Copy audio files
+        const audioFiles = [
+          'audio/mom-awesome.mp3',
+          'audio/mom-you-did-it.mp3'
+        ];
+
         // Copy word files
         wordFiles.forEach(file => {
           const srcPath = resolve(file);
           const destPath = resolve(outDir, file);
           if (existsSync(srcPath)) {
+            copyFileSync(srcPath, destPath);
+            console.log(`Copied ${file} to ${outDir}/`);
+          }
+        });
+
+        // Copy audio files
+        audioFiles.forEach(file => {
+          const srcPath = resolve(file);
+          const destPath = resolve(outDir, file);
+          if (existsSync(srcPath)) {
+            // Ensure the audio directory exists
+            const destDir = resolve(outDir, 'audio');
+            if (!existsSync(destDir)) {
+              mkdirSync(destDir, { recursive: true });
+            }
             copyFileSync(srcPath, destPath);
             console.log(`Copied ${file} to ${outDir}/`);
           }
@@ -42,7 +63,9 @@ const coreUrlsToCache = [
   './',
   './index.html',
   './wordle-allowed-guesses.txt',
-  './wordle-answers-alphabetical.txt'
+  './wordle-answers-alphabetical.txt',
+  './audio/mom-awesome.mp3',
+  './audio/mom-you-did-it.mp3'
 ];
 
 // Dynamic asset files (updated on each build)

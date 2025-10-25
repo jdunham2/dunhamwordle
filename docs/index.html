@@ -2,19 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./assets/vite-CWPIoHfL.svg" />
-    <link rel="manifest" href="./assets/manifest-CUqjQ4UO.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/dunhamwordle/vite.svg" />
+    <link rel="manifest" href="/dunhamwordle/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#18181b" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="./assets/vite-CWPIoHfL.svg">
+    <meta name="apple-mobile-web-app-title" content="Dunham Wordle">
+    <link rel="apple-touch-icon" href="/dunhamwordle/vite.svg">
+    <link rel="canonical" href="https://jeshuad.github.io/dunhamwordle/" />
     <meta
       name="description"
       content="Challenge your vocabulary with this fun word guessing game! You have six tries to guess the five-letter word. Built with React and Tailwind CSS."
     />
     <title>Dunham Wordle</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/add-to-homescreen.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -65,8 +73,8 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-B2_zvMPc.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DQlCU8oW.css">
+  <script type="module" crossorigin src="./assets/index-BXLkjf6h.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-aj0e-_i-.css">
 </head>
   <body class="bg-zinc-900 text-white">
     <div id="root"></div>
@@ -75,5 +83,32 @@
       <p>This is a word guessing game similar to Wordle. You need to enable JavaScript to play.</p>
       <p>How to Play: Guess the hidden five-letter word in six tries. After each guess, the color of the tiles will change to show how close your guess was to the word. Green means the letter is in the word and in the correct spot. Yellow means the letter is in the word but in the wrong spot. Gray means the letter isn't in the word at all.</p>
     </noscript>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/dunhamwordle/sw.js', {
+            scope: '/dunhamwordle/'
+          }).then((registration) => {
+            console.log('SW registered: ', registration);
+          }).catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+
+      // Initialize Add to Home Screen
+      document.addEventListener('DOMContentLoaded', function () {
+        window.AddToHomeScreenInstance = window.AddToHomeScreen({
+          appName: 'Dunham Wordle',
+          appNameDisplay: 'standalone',
+          appIconUrl: '/dunhamwordle/vite.svg',
+          assetUrl: 'https://cdn.jsdelivr.net/gh/philfung/add-to-homescreen@3.4/dist/assets/img/',
+          maxModalDisplayCount: -1,
+          displayOptions: { showMobile: true, showDesktop: false },
+          allowClose: true,
+          showArrow: true
+        });
+      });
+    </script>
   </body>
 </html>
