@@ -49,7 +49,14 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
   const getCompletionStatus = (date: Date): 'completed' | 'not-completed' | 'future' => {
     const dateKey = getDateKey(date);
     if (isFutureDate(date)) return 'future';
-    if (completions[dateKey]?.completed) return 'completed';
+    
+    // Debug logging
+    console.log('Checking completion for date:', date.toDateString(), 'key:', dateKey, 'completions:', completions);
+    
+    if (completions[dateKey]?.completed) {
+      console.log('Found completed date:', dateKey);
+      return 'completed';
+    }
     return 'not-completed';
   };
 
@@ -76,11 +83,16 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
       if (isSelected) {
         dayClasses += "bg-blue-600 text-white";
       } else if (isToday(date)) {
-        dayClasses += "bg-gray-600 text-white";
+        // Current day: blue if not completed, green if completed
+        if (completionStatus === 'completed') {
+          dayClasses += "bg-green-600 text-white";
+        } else {
+          dayClasses += "bg-blue-500 text-white";
+        }
       } else if (completionStatus === 'completed') {
         dayClasses += "bg-green-600 text-white hover:bg-green-700";
       } else if (completionStatus === 'not-completed') {
-        dayClasses += "bg-gray-700 text-gray-300 hover:bg-gray-600";
+        dayClasses += "bg-red-600 text-white hover:bg-red-700";
       } else if (completionStatus === 'future') {
         dayClasses += "bg-gray-800 text-gray-500 cursor-not-allowed";
       }
@@ -155,8 +167,12 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
             <span className="text-xs text-gray-300">Completed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-700 rounded-full"></div>
+            <div className="w-3 h-3 bg-red-600 rounded-full"></div>
             <span className="text-xs text-gray-300">Not completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <span className="text-xs text-gray-300">Today</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-800 rounded-full"></div>
@@ -164,19 +180,19 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="flex flex-col gap-3">
           <button
             onClick={handlePlay}
             disabled={getCompletionStatus(selectedDate) === 'future'}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
           >
-            Play
+            PLAY
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-3 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 transition-colors"
+          >
+            LEAVE
           </button>
         </div>
       </div>

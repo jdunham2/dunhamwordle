@@ -229,6 +229,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 updatedCompletions = { ...state.wordOfTheDayCompletions };
                 const dateToUse = state.selectedDate || new Date();
                 const dateKey = getDateKey(dateToUse);
+                
+                // Debug logging
+                console.log('Storing completion for Word of the Day:', {
+                  selectedDate: state.selectedDate,
+                  dateToUse: dateToUse,
+                  dateKey: dateKey,
+                  guessNum: guessNum,
+                  solution: state.solution
+                });
+                
                 updatedCompletions[dateKey] = {
                   completed: true,
                   guesses: guessNum,
@@ -874,9 +884,12 @@ function App() {
                         {gameMode === GameMode.WordOfTheDay ? (
                             <button
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-                                onClick={handlePlayUnlimited}
+                                onClick={() => {
+                                    setShowStats(false);
+                                    setShowCalendar(true);
+                                }}
                             >
-                                Play Unlimited Wordle
+                                Next
                             </button>
                         ) : (
                             <button
