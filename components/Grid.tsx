@@ -14,6 +14,9 @@ interface GridProps {
 
 export const Grid: React.FC<GridProps> = ({ guesses, currentGuess, currentGuessIndex, solution, isInvalidGuess }) => {
   return (
+    // IMPORTANT: Grid layout settings - DO NOT CHANGE without explicit request
+    // w-full max-w-sm mx-auto: Makes grid take full available width while staying tight
+    // gap-1 sm:gap-1.5: Tight spacing between rows (Row component has gap-0 to avoid double spacing)
     <div className="grid grid-rows-6 gap-1 sm:gap-1.5 w-full max-w-sm mx-auto" role="grid" aria-label="Game board">
       {Array.from({ length: MAX_GUESSES }).map((_, i) => {
         const isCurrentGuessRow = i === currentGuessIndex;

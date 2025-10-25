@@ -34,6 +34,9 @@ const TileComponent: React.FC<TileProps> = ({ letter, status, isSubmitted, index
         : `Empty tile`;
 
     return (
+        // IMPORTANT: Tile sizing settings - DO NOT CHANGE without explicit request
+        // w-12 h-12: Perfect 48px size on mobile (not too small like 30px, not too big like 56px)
+        // text-xl sm:text-2xl md:text-3xl: Proper font scaling for readability
         <div
             className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 flex items-center justify-center text-xl sm:text-2xl md:text-3xl font-bold uppercase ${statusClasses[status]} ${animationClass} ${hintClass}`}
             style={{ animationDelay }}

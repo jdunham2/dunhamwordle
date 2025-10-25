@@ -37,6 +37,9 @@ const RowComponent: React.FC<RowProps> = ({ guess, solution, isSubmitted, isInva
   const animationClass = isInvalid ? 'animate-shake' : '';
 
   return (
+    // IMPORTANT: Row layout settings - DO NOT CHANGE without explicit request
+    // gap-0: No spacing between tiles (Grid component handles all spacing)
+    // This prevents double spacing that would make the grid too wide
     <div className={`grid grid-cols-5 gap-0 ${animationClass}`} role="row">
       {paddedGuess.split('').map((letter, i) => {
         const status: TileStatus = isSubmitted
