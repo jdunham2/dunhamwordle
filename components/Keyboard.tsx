@@ -67,7 +67,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses, exp
             {i === 1 && <div className="w-2 sm:w-3 md:w-4" />}
         </div>
       ))}
-      
+
       {/* Enter button - separate row */}
       <div className="flex justify-center px-1">
         <button

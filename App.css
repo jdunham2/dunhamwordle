@@ -63,7 +63,7 @@ body {
   }
   100% {
     transform: translate(
-      calc(var(--scatter-x, 0) * 1px), 
+      calc(var(--scatter-x, 0) * 1px),
       calc(var(--scatter-y, 0) * 1px)
     ) rotate(var(--scatter-rotation, 0deg));
   }
@@ -75,7 +75,7 @@ body {
   }
   100% {
     transform: translate(
-      calc(var(--scatter-x, 0) * 1px), 
+      calc(var(--scatter-x, 0) * 1px),
       calc(var(--scatter-y, 0) * 1px)
     ) rotate(var(--scatter-rotation, 0deg));
   }

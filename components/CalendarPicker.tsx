@@ -78,7 +78,7 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
                        selectedDate.getFullYear() === currentYear;
 
       let dayClasses = "h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium cursor-pointer transition-colors ";
-      
+
       if (completionStatus === 'completed') {
         // Completed days are always green, even if selected or today
         dayClasses += "bg-emerald-500 text-white hover:bg-emerald-600";

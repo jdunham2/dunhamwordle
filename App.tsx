@@ -6,7 +6,7 @@ import { CalendarPicker } from './components/CalendarPicker';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
-import Explode from 'react-explode';
+import { Explode } from 'react-explode';
 import './App.css';
 
 
@@ -434,7 +434,7 @@ function App() {
             setKeySequence(''); // Reset after use
             return; // Exit to avoid processing as a normal letter
         }
-        
+
         // Easter eggs
         if (newSequence.toUpperCase() === 'MILES') {
             setShowMilesExplosion(true);
@@ -442,7 +442,7 @@ function App() {
             setKeySequence(''); // Reset after use
             return;
         }
-        
+
         if (newSequence.toUpperCase() === 'TRACEY') {
             setShowTraceyMessage(true);
             setKeySequence(''); // Reset after use
