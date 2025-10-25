@@ -50,10 +50,11 @@ export interface GameState {
   stats: GameModeStats;
   wordOfTheDayCompletions: WordOfTheDayCompletion;
   currentGameMode: GameMode;
+  selectedDate?: Date;
 }
 
 export type GameAction =
-  | { type: 'START_GAME'; payload: { solution: string; gameMode: GameMode } }
+  | { type: 'START_GAME'; payload: { solution: string; gameMode: GameMode; selectedDate?: Date } }
   | { type: 'TYPE_LETTER'; payload: { letter: string } }
   | { type: 'BACKSPACE' }
   | { type: 'SUBMIT_GUESS'; payload: { validWords: Set<string>, guess: string } }

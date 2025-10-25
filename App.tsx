@@ -27,11 +27,11 @@ const createDefaultStats = () => {
 const loadStats = (): GameModeStats => {
   const storedStats = localStorage.getItem(STATS_KEY);
   const defaultStats = createDefaultStats();
-  
+
   if (storedStats) {
     try {
       const parsed = JSON.parse(storedStats);
-      
+
       // Check if it's the old format (single stats object)
       if ('gamesPlayed' in parsed && !('unlimited' in parsed)) {
         // Migrate old format to new format
@@ -47,7 +47,7 @@ const loadStats = (): GameModeStats => {
         };
         return migratedStats;
       }
-      
+
       // New format
       if ('unlimited' in parsed && 'wordOfTheDay' in parsed) {
         return {
@@ -59,7 +59,7 @@ const loadStats = (): GameModeStats => {
       // If parsing fails, fall back to default
     }
   }
-  
+
   return {
     unlimited: createDefaultStats(),
     wordOfTheDay: createDefaultStats()
@@ -95,15 +95,15 @@ const getWordOfTheDay = (solutions: string[], date?: Date): string => {
 
   // Create a more complex seed using multiple mathematical operations
   const baseSeed = year * 10000 + month * 100 + day;
-  
+
   // Apply multiple transformations to make it less predictable
   const seed1 = (baseSeed * 9301 + 49297) % 233280;
   const seed2 = (seed1 * 9301 + 49297) % 233280;
   const seed3 = (seed2 * 9301 + 49297) % 233280;
-  
+
   // Combine seeds with additional randomness factors
   const finalSeed = (seed1 + seed2 * 7 + seed3 * 13) % solutions.length;
-  
+
   return solutions[finalSeed];
 };
 
@@ -124,6 +124,7 @@ const initialState: GameState = {
   stats: loadStats(),
   wordOfTheDayCompletions: loadWordOfTheDayCompletions(),
   currentGameMode: GameMode.Unlimited,
+  selectedDate: undefined,
 };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -135,6 +136,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         wordOfTheDayCompletions: state.wordOfTheDayCompletions, // Persist completions
         solution: action.payload.solution,
         currentGameMode: action.payload.gameMode,
+        selectedDate: action.payload.selectedDate,
         gameStatus: GameStatus.Playing,
       };
     case 'NEW_GAME':
@@ -204,12 +206,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       let updatedStats = state.stats;
       let updatedCompletions = state.wordOfTheDayCompletions;
-      
+
       if (newGameStatus === GameStatus.Won || newGameStatus === GameStatus.Lost) {
           // Update stats for the current game mode
           updatedStats = { ...state.stats };
           const currentModeStats = { ...updatedStats[state.currentGameMode] };
-          
+
           currentModeStats.gamesPlayed += 1;
           if (isWin) {
               currentModeStats.wins += 1;
@@ -221,11 +223,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               const newDistribution = { ...currentModeStats.guessDistribution };
               newDistribution[guessNum] = (newDistribution[guessNum] || 0) + 1;
               currentModeStats.guessDistribution = newDistribution;
-              
+
               // Update Word of the Day completion if this is a Word of the Day game
               if (state.currentGameMode === GameMode.WordOfTheDay) {
                 updatedCompletions = { ...state.wordOfTheDayCompletions };
-                const dateKey = getDateKey(new Date());
+                const dateToUse = state.selectedDate || new Date();
+                const dateKey = getDateKey(dateToUse);
                 updatedCompletions[dateKey] = {
                   completed: true,
                   guesses: guessNum,
@@ -235,7 +238,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           } else {
               currentModeStats.currentStreak = 0;
           }
-          
+
           updatedStats[state.currentGameMode] = currentModeStats;
       }
 
@@ -315,7 +318,7 @@ function App() {
     }
 
     setGameMode(mode);
-    dispatch({ type: 'START_GAME', payload: { solution: newSolution, gameMode: mode } });
+    dispatch({ type: 'START_GAME', payload: { solution: newSolution, gameMode: mode, selectedDate: date } });
   }, []);
 
   // Save stats when they change
@@ -821,11 +824,12 @@ function App() {
                 {isGameOver && (
                     <div className="text-center mb-6">
                         <h2 className="text-3xl font-bold mb-2">{state.gameStatus === GameStatus.Won ? 'You Won!' : 'Game Over'}</h2>
-                        <p>The word was: <strong className="text-2xl tracking-widest">{state.solution}</strong></p>
                     </div>
                 )}
 
-                <h2 className="text-2xl font-bold mb-6 text-center">Statistics</h2>
+                <h2 className="text-2xl font-bold mb-6 text-center">
+                  {state.currentGameMode === GameMode.WordOfTheDay ? 'Word of the Day Statistics' : 'Statistics'}
+                </h2>
                 <div className="flex justify-around text-center mb-6">
                     <div>
                         <p className="text-4xl font-bold">{currentModeStats.gamesPlayed}</p>
@@ -854,7 +858,7 @@ function App() {
                         <div className="w-4 font-semibold">{guesses}</div>
                         <div className="flex-1 bg-zinc-700 rounded-sm">
                           <div
-                            className={`h-5 text-right pr-2 text-white flex items-center justify-end rounded-sm ${state.gameStatus === GameStatus.Won && state.currentGuessIndex === Number(guesses) ? 'bg-correct' : 'bg-absent'}`}
+                            className={`h-5 text-right pr-2 text-white flex items-center justify-end rounded-sm ${state.gameStatus === GameStatus.Won && state.currentGuessIndex === Number(guesses) ? 'bg-correct' : 'bg-gray-500'}`}
                             style={{ width: countNum > 0 ? `${(countNum / maxDistCount) * 100}%` : '0' }}
                           >
                             {countNum > 0 && <span className="font-bold">{countNum}</span>}
