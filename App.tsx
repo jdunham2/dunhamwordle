@@ -324,6 +324,7 @@ function App() {
 
     setGameMode(mode);
     dispatch({ type: 'START_GAME', payload: { solution: newSolution, gameMode: mode, selectedDate: date } });
+    setRevealedHintIndices(new Set()); // Reset ghost letters for new game
   }, []);
 
   // Save stats when they change
