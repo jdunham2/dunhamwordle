@@ -28,9 +28,15 @@ const Key: React.FC<{
 
   const isWideKey = value === 'Backspace';
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onClick(value);
+    // Blur the button to remove focus after click
+    e.currentTarget.blur();
+  };
+
   return (
     <button
-      onClick={() => onClick(value)}
+      onClick={handleClick}
       className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg ${
         isWideKey ? 'w-16 sm:w-20 md:w-24 px-2 sm:px-3' : 'flex-1 min-w-0'
       } ${statusClasses[status]}`}
@@ -71,7 +77,10 @@ export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses, exp
       {/* Enter button - separate row */}
       <div className="flex justify-center px-1">
         <button
-          onClick={() => onKeyPress('Enter')}
+          onClick={(e) => {
+            onKeyPress('Enter');
+            e.currentTarget.blur();
+          }}
           className="h-14 sm:h-16 md:h-20 px-8 sm:px-12 md:px-16 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg bg-key-bg hover:bg-gray-600 text-white"
         >
           ENTER

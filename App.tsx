@@ -426,14 +426,32 @@ function App() {
     enableAudio(); // Enable audio on first key press
     if (state.gameStatus !== GameStatus.Playing) return;
 
-    // Check for cheat code
+    // Handle regular game input first for better responsiveness
+    if (key === 'Enter') {
+      // Use the actual typed letters, not the ghost letters
+      if (state.currentGuess.length !== WORD_LENGTH) {
+        dispatch({ type: 'SET_ERROR', payload: { error: 'Not enough letters' } });
+        return;
+      }
+      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: state.currentGuess } });
+      return;
+    } else if (key === 'Backspace') {
+      dispatch({ type: 'BACKSPACE' });
+      return;
+    } else if (key.length === 1 && key.match(/[a-z]/i)) {
+      dispatch({ type: 'TYPE_LETTER', payload: { letter: key } });
+    }
+
+    // Handle special sequences after regular input (less critical for responsiveness)
     if (key.length === 1 && key.match(/[a-z]/i)) {
         const newSequence = (keySequence + key).slice(-6);
         setKeySequence(newSequence);
+        
+        // Check for cheat codes
         if (newSequence.toUpperCase() === 'JESHUA' || newSequence.toUpperCase() === 'AMARA') {
             dispatch({ type: 'SET_CURRENT_GUESS', payload: state.solution });
             setKeySequence(''); // Reset after use
-            return; // Exit to avoid processing as a normal letter
+            return;
         }
 
         // Easter eggs
@@ -441,48 +459,48 @@ function App() {
             setShowMilesExplosion(true);
             setGameExploded(true);
             setKeySequence(''); // Reset after use
-
+            
             // Add CSS custom properties for explosion animation
             const addExplosionStyles = () => {
               if (typeof document === 'undefined') return; // Skip in test environment
               const tiles = document.querySelectorAll('[role="gridcell"]');
               const keys = document.querySelectorAll('.keyboard-container button');
-
+              
               // Add random scatter values to tiles
               tiles.forEach((tile, index) => {
                 const scatterX = (Math.random() - 0.5) * 200;
                 const scatterY = (Math.random() - 0.5) * 200;
                 const rotation = (Math.random() - 0.5) * 720;
-
+                
                 (tile as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
                 (tile as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
                 (tile as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
                 (tile as HTMLElement).classList.add('tile-exploded');
               });
-
+              
               // Add random scatter values to keys
               keys.forEach((key, index) => {
                 const scatterX = (Math.random() - 0.5) * 300;
                 const scatterY = (Math.random() - 0.5) * 300;
                 const rotation = (Math.random() - 0.5) * 720;
-
+                
                 (key as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
                 (key as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
                 (key as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
                 (key as HTMLElement).classList.add('key-exploded');
               });
             };
-
+            
             // Apply styles after a short delay to ensure DOM is ready
             setTimeout(addExplosionStyles, 100);
-
+            
             // Auto-reset after 3 seconds
             setTimeout(() => {
                 setShowMilesExplosion(false);
                 setGameExploded(false);
                 dispatch({ type: 'NEW_GAME' });
             }, 3000);
-
+            
             return;
         }
 
@@ -493,22 +511,6 @@ function App() {
         }
     } else {
         setKeySequence(''); // Reset on non-letter keys
-    }
-
-    // Hints persist until explicitly cleared or new game starts
-
-    if (key === 'Enter') {
-      // Use the actual typed letters, not the ghost letters
-      if (state.currentGuess.length !== WORD_LENGTH) {
-        dispatch({ type: 'SET_ERROR', payload: { error: 'Not enough letters' } });
-        return;
-      }
-
-      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: state.currentGuess } });
-    } else if (key === 'Backspace') {
-      dispatch({ type: 'BACKSPACE' });
-    } else if (key.length === 1 && key.match(/[a-z]/i)) {
-      dispatch({ type: 'TYPE_LETTER', payload: { letter: key } });
     }
   }, [state.gameStatus, state.currentGuess, state.solution, keySequence]);
 
