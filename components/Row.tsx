@@ -37,7 +37,7 @@ const RowComponent: React.FC<RowProps> = ({ guess, solution, isSubmitted, isInva
   const animationClass = isInvalid ? 'animate-shake' : '';
 
   return (
-    <div className={`grid grid-cols-5 gap-1 sm:gap-1.5 ${animationClass}`} role="row">
+    <div className={`grid grid-cols-5 gap-0 ${animationClass}`} role="row">
       {paddedGuess.split('').map((letter, i) => {
         const status: TileStatus = isSubmitted
           ? getTileStatus(letter, i, solution, guess)
