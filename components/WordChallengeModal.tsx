@@ -60,8 +60,8 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
       // Try native share first
       const shared = await shareNative(
         url,
-        'Word Challenge',
-        `Can you guess my word? Try this Wordle challenge: ${customWord.toUpperCase()}`
+        'Dunham Wordle',
+        `Can you guess my word?`
       );
 
       if (!shared) {
