@@ -22,6 +22,8 @@ export interface Stats {
   wins: number;
   currentStreak: number;
   maxStreak: number;
+  dayStreak?: number; // For Word of the Day consecutive days
+  maxDayStreak?: number; // For Word of the Day max consecutive days
   guessDistribution: { [key: number]: number };
 }
 
@@ -38,6 +40,19 @@ export interface WordOfTheDayCompletion {
   };
 }
 
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockedAt?: Date;
+  category: 'streak' | 'speed' | 'accuracy' | 'special';
+}
+
+export interface UserBadges {
+  [badgeId: string]: Badge;
+}
+
 export interface GameState {
   solution: string;
   guesses: string[];
@@ -49,6 +64,7 @@ export interface GameState {
   isInvalidGuess: boolean;
   stats: GameModeStats;
   wordOfTheDayCompletions: WordOfTheDayCompletion;
+  badges: UserBadges;
   currentGameMode: GameMode;
   selectedDate?: Date;
 }
@@ -61,7 +77,9 @@ export type GameAction =
   | { type: 'SET_ERROR'; payload: { error: string | null } }
   | { type: 'NEW_GAME' }
   | { type: 'SET_CURRENT_GUESS'; payload: string }
-  | { type: 'UPDATE_KEY_STATUSES'; payload: KeyStatuses };
+  | { type: 'UPDATE_KEY_STATUSES'; payload: KeyStatuses }
+  | { type: 'UNLOCK_BADGE'; payload: { badgeId: string; badge: Badge } }
+  | { type: 'UPDATE_DAY_STREAK'; payload: { dayStreak: number; maxDayStreak: number } };
 
 // Add to Home Screen types
 declare global {

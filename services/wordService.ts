@@ -1,4 +1,4 @@
-// URLs for the word lists relative to the app root (works on GitHub Pages subpaths)
+// URLs for the word lists relative to the app root
 const SOLUTIONS_URL = './wordle-answers-alphabetical.txt';
 const ALLOWED_GUESSES_URL = './wordle-allowed-guesses.txt';
 

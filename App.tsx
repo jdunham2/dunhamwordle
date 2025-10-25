@@ -4,9 +4,14 @@ import { Keyboard } from './components/Keyboard';
 import { Boosts } from './components/Boosts';
 import { CalendarPicker } from './components/CalendarPicker';
 import { StartScreen } from './components/StartScreen';
+import { WordChallengeModal } from './components/WordChallengeModal';
+import { ResultPlaybackScreen } from './components/ResultPlaybackScreen';
+import { PlaybackView } from './components/PlaybackView';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
-import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
+import { loadBadges, saveBadges, checkForNewBadges, calculateDayStreak } from './services/badgeService';
+import { extractChallengeFromUrl, extractResultFromUrl, WordChallenge, ChallengeResult, encodeChallengeResult, generateResultUrl } from './services/challengeService';
+import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion, Badge } from './types';
 import './App.css';
 
 
@@ -124,6 +129,7 @@ const initialState: GameState = {
   isInvalidGuess: false,
   stats: loadStats(),
   wordOfTheDayCompletions: loadWordOfTheDayCompletions(),
+  badges: loadBadges(),
   currentGameMode: GameMode.Unlimited,
   selectedDate: undefined,
 };
@@ -135,6 +141,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...initialState,
         stats: state.stats, // Persist stats across new games
         wordOfTheDayCompletions: state.wordOfTheDayCompletions, // Persist completions
+        badges: state.badges, // Persist badges across new games
         solution: action.payload.solution,
         currentGameMode: action.payload.gameMode,
         selectedDate: action.payload.selectedDate,
@@ -272,6 +279,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         keyStatuses: action.payload,
       };
+    case 'UNLOCK_BADGE':
+      return {
+        ...state,
+        badges: {
+          ...state.badges,
+          [action.payload.badgeId]: action.payload.badge
+        }
+      };
+    case 'UPDATE_DAY_STREAK':
+      return {
+        ...state,
+        stats: {
+          ...state.stats,
+          wordOfTheDay: {
+            ...state.stats.wordOfTheDay,
+            dayStreak: action.payload.dayStreak,
+            maxDayStreak: action.payload.maxDayStreak
+          }
+        }
+      };
     default:
       return state;
   }
@@ -295,6 +322,13 @@ function App() {
   const [showMilesExplosion, setShowMilesExplosion] = useState(false);
   const [showTraceyMessage, setShowTraceyMessage] = useState(false);
   const [gameExploded, setGameExploded] = useState(false);
+  const [newBadgeNotification, setNewBadgeNotification] = useState<Badge | null>(null);
+  const [showWordChallenge, setShowWordChallenge] = useState(false);
+  const [currentChallenge, setCurrentChallenge] = useState<WordChallenge | null>(null);
+  const [currentResult, setCurrentResult] = useState<ChallengeResult | null>(null);
+  const [showResultPlayback, setShowResultPlayback] = useState(false);
+  const [showPlaybackView, setShowPlaybackView] = useState(false);
+  const [wordListsState, setWordListsState] = useState<{ solutions: string[]; validWords: Set<string> } | null>(null);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -304,11 +338,31 @@ function App() {
     }
   }, [audioEnabled]);
 
+  // Native share function using Web Share API
+  const shareNative = useCallback(async (url: string, title: string, text: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          text,
+          url
+        });
+        return true;
+      } catch (error) {
+        // User cancelled or error occurred
+        return false;
+      }
+    }
+    return false;
+  }, []);
+
   const startNewGame = useCallback(async (mode: GameMode = GameMode.Unlimited, date?: Date) => {
     if (!wordLists.current) {
         try {
             wordLists.current = await loadWordLists();
+            setWordListsState(wordLists.current);
         } catch (e) {
+            console.error('Failed to load word lists:', e);
             dispatch({ type: 'SET_ERROR', payload: { error: 'Failed to load words.' } });
             return;
         }
@@ -336,6 +390,99 @@ function App() {
   useEffect(() => {
     saveWordOfTheDayCompletions(state.wordOfTheDayCompletions);
   }, [state.wordOfTheDayCompletions]);
+
+  // Save badges when they change
+  useEffect(() => {
+    saveBadges(state.badges);
+  }, [state.badges]);
+
+  // Check for new badges and update day streak when game completes
+  useEffect(() => {
+    if (state.gameStatus === GameStatus.Won || state.gameStatus === GameStatus.Lost) {
+      const isWin = state.gameStatus === GameStatus.Won;
+      const guesses = state.currentGuessIndex;
+      const gameMode = state.currentGameMode === GameMode.WordOfTheDay ? 'wordOfTheDay' : 'unlimited';
+
+      // Check for new badges
+      const newBadges = checkForNewBadges(
+        state.stats.unlimited,
+        state.stats.wordOfTheDay,
+        state.wordOfTheDayCompletions,
+        state.badges,
+        gameMode,
+        guesses,
+        isWin
+      );
+
+      // Unlock new badges
+      newBadges.forEach(badge => {
+        dispatch({ type: 'UNLOCK_BADGE', payload: { badgeId: badge.id, badge } });
+        // Show notification for the first badge (most recent)
+        if (newBadges.length > 0 && badge === newBadges[0]) {
+          setNewBadgeNotification(badge);
+        }
+      });
+
+      // Update day streak for Word of the Day
+      if (state.currentGameMode === GameMode.WordOfTheDay) {
+        const dayStreak = calculateDayStreak(state.wordOfTheDayCompletions);
+        const maxDayStreak = Math.max(dayStreak, state.stats.wordOfTheDay.maxDayStreak || 0);
+
+        if (dayStreak !== state.stats.wordOfTheDay.dayStreak || maxDayStreak !== state.stats.wordOfTheDay.maxDayStreak) {
+          dispatch({ type: 'UPDATE_DAY_STREAK', payload: { dayStreak, maxDayStreak } });
+        }
+      }
+
+      // Handle challenge completion
+      if (currentChallenge) {
+        const result = {
+          challengeId: currentChallenge.challengeId,
+          word: currentChallenge.word,
+          guesses: state.guesses,
+          solved: isWin,
+          solveTime: Date.now() - currentChallenge.createdAt.getTime(),
+          createdAt: new Date()
+        };
+
+        const resultUrl = generateResultUrl(result);
+        console.log('=== RESULT URL GENERATION ===');
+        console.log('Result data:', result);
+        console.log('Generated URL:', resultUrl);
+        console.log('=============================');
+
+        // Show result sharing option
+        setTimeout(async () => {
+          if (confirm(`Challenge completed! ${isWin ? 'You solved it!' : 'Better luck next time!'}\n\nShare your results back?`)) {
+            const shared = await shareNative(
+              resultUrl,
+              'Word Challenge Results',
+              `I ${isWin ? 'solved' : 'attempted'} your word challenge in ${result.guesses.filter(guess => guess.trim() !== '').length} guesses!`
+            );
+
+            if (!shared) {
+              // Fallback to clipboard
+              try {
+                await navigator.clipboard.writeText(resultUrl);
+                alert('Result link copied to clipboard!');
+              } catch {
+                // Final fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = resultUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Result link copied to clipboard!');
+              }
+            }
+          }
+        }, 2000); // Wait for stats modal to show first
+
+        // Clear the challenge
+        setCurrentChallenge(null);
+      }
+    }
+  }, [state.gameStatus, state.currentGuessIndex, state.currentGameMode, state.stats, state.wordOfTheDayCompletions, state.badges, currentChallenge]);
 
   // Calculate which hints should be visible based on:
   // 1. What indices were revealed (revealedHintIndices)
@@ -385,11 +532,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.title = "React Word Guess Game";
+    document.title = "Dunham Wordle";
     if (state.gameStatus === GameStatus.Won) {
-        document.title = "You Won! - React Word Guess Game";
+        document.title = "You Won! - Dunham Wordle";
     } else if (state.gameStatus === GameStatus.Lost) {
-        document.title = "Game Over - React Word Guess Game";
+        document.title = "Game Over - Dunham Wordle";
     }
   }, [state.gameStatus]);
 
@@ -422,6 +569,43 @@ function App() {
     }
   }, [state.gameStatus, state.solution, state.stats, state.currentGuessIndex]);
 
+  // Check for challenge URLs on app load
+  useEffect(() => {
+    console.log('=== URL DETECTION ===');
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', window.location.search);
+
+    const challenge = extractChallengeFromUrl();
+    const result = extractResultFromUrl();
+
+    console.log('Extracted challenge:', challenge);
+    console.log('Extracted result:', result);
+
+    if (challenge) {
+      console.log('Challenge detected, starting challenge game');
+      // Bypass start screen and start challenge immediately
+      setShowStartScreen(false);
+      setCurrentChallenge(challenge);
+      startNewGame(GameMode.Unlimited).then(() => {
+        // Add the challenge word to valid words so it can be guessed
+        // This happens after startNewGame to ensure word lists are loaded
+        if (wordLists.current) {
+          wordLists.current.validWords.add(challenge.word);
+          // Update the state so the game uses the updated word list
+          setWordListsState({ ...wordLists.current });
+        }
+        // Override the solution with the challenge word
+        dispatch({ type: 'START_GAME', payload: { solution: challenge.word, gameMode: GameMode.Unlimited } });
+      });
+    } else if (result) {
+      console.log('Result detected, showing playback screen');
+      // Handle challenge result - show result playback screen
+      setShowStartScreen(false);
+      setCurrentResult(result);
+      setShowPlaybackView(true);
+    }
+  }, []); // Run once on mount
+
 
   const handleKeyPress = useCallback((key: string) => {
     enableAudio(); // Enable audio on first key press
@@ -434,7 +618,8 @@ function App() {
         dispatch({ type: 'SET_ERROR', payload: { error: 'Not enough letters' } });
         return;
       }
-      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: wordLists.current!.validWords, guess: state.currentGuess } });
+      const validWordsToUse = wordListsState?.validWords || wordLists.current!.validWords;
+      dispatch({ type: 'SUBMIT_GUESS', payload: { validWords: validWordsToUse, guess: state.currentGuess } });
       return;
     } else if (key === 'Backspace') {
       dispatch({ type: 'BACKSPACE' });
@@ -634,6 +819,24 @@ function App() {
     setShowStats(true);
   };
 
+  const handlePlayWithFriends = async () => {
+    setShowStartScreen(false);
+
+    // Load word lists if not already loaded
+    if (!wordLists.current) {
+      try {
+        wordLists.current = await loadWordLists();
+        setWordListsState(wordLists.current);
+      } catch (error) {
+        console.error('Failed to load word lists:', error);
+      }
+    } else {
+      setWordListsState(wordLists.current);
+    }
+
+    setShowWordChallenge(true);
+  };
+
   // Confetti celebration function
   const triggerCelebration = (guessCount: number) => {
     // Play audio celebration
@@ -784,13 +987,33 @@ function App() {
     <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden lg:justify-center" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
 
-      <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
+      {!showPlaybackView && (
+        <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
         <div className="flex items-center gap-2">
           <button onClick={() => { enableAudio(); setShowHelp(true); }} aria-label="How to play">
              <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
            <button onClick={() => { enableAudio(); setShowStats(true); }} aria-label="View statistics">
              <BarChart4 className="h-5 w-5 text-gray-400 hover:text-white" />
+          </button>
+        <button onClick={async () => {
+          enableAudio();
+          // Ensure word lists are loaded before opening modal
+          if (!wordLists.current) {
+            try {
+              wordLists.current = await loadWordLists();
+              setWordListsState(wordLists.current);
+            } catch (e) {
+              console.error('Failed to load word lists:', e);
+              alert('Failed to load word lists. Please try again.');
+              return;
+            }
+          } else {
+            setWordListsState(wordLists.current);
+          }
+          setShowWordChallenge(true);
+        }} aria-label="Create word challenge">
+             <Share2 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
           {isMobile && (
             <button onClick={handleDownload} aria-label="Install app">
@@ -808,10 +1031,12 @@ function App() {
           </button>
         </div>
       </header>
+      )}
 
       {/* IMPORTANT: Layout spacing rules - DO NOT CHANGE without explicit request */}
       {/* mb-4: Fixed 16px gap between grid and keyboard (not flexible spacing) */}
-      <main className="flex flex-col items-center relative flex-shrink-0 mb-4">
+      {!showPlaybackView && (
+        <main className="flex flex-col items-center relative flex-shrink-0 mb-4">
          {state.error && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake whitespace-nowrap">
                 {state.error}
@@ -832,18 +1057,25 @@ function App() {
                   />
              </AppContext.Provider>
         )}
-      </main>
+        </main>
+      )}
 
-      <div className="flex-shrink-0">
-        <Boosts
-          onReveal={handleRevealBoost}
-          onEliminate={handleEliminateBoost}
-          isRevealDisabled={isGameOver || !canReveal}
-          isEliminateDisabled={isGameOver}
-        />
+      {!showPlaybackView && (
+        <div className="flex-shrink-0">
+          <Boosts
+            onReveal={handleRevealBoost}
+            onEliminate={handleEliminateBoost}
+            isRevealDisabled={isGameOver || !canReveal}
+            isEliminateDisabled={isGameOver}
+          />
+        </div>
+      )}
 
-        <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} exploded={gameExploded} />
-      </div>
+      {!showPlaybackView && (
+        <div className="flex-shrink-0">
+          <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} exploded={gameExploded} />
+        </div>
+      )}
 
 
       {showHelp && (
@@ -930,6 +1162,20 @@ function App() {
                     </div>
                 </div>
 
+                {/* Day Streak for Word of the Day */}
+                {state.currentGameMode === GameMode.WordOfTheDay && currentModeStats.dayStreak !== undefined && (
+                    <div className="flex justify-around text-center mb-6">
+                        <div>
+                            <p className="text-4xl font-bold">{currentModeStats.dayStreak}</p>
+                            <p className="text-xs text-gray-400">Day Streak</p>
+                        </div>
+                        <div>
+                            <p className="text-4xl font-bold">{currentModeStats.maxDayStreak || 0}</p>
+                            <p className="text-xs text-gray-400">Max Day Streak</p>
+                        </div>
+                    </div>
+                )}
+
                 <h3 className="text-xl font-bold mb-4 text-center">Guess Distribution</h3>
                 <div className="space-y-2 px-4">
                   {distEntries.map(([guesses, count]) => {
@@ -948,6 +1194,36 @@ function App() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Badges Section */}
+                <div className="mt-8">
+                    <h3 className="text-xl font-bold mb-4 text-center">Badges</h3>
+                    <div className="max-h-40 overflow-y-auto">
+                        {Object.values(state.badges).filter((badge: Badge) => badge.unlockedAt).length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {Object.values(state.badges)
+                                    .filter((badge: Badge) => badge.unlockedAt)
+                                    .slice(0, 6) // Show first 6 badges
+                                    .map((badge: Badge) => (
+                                        <div key={badge.id} className="flex flex-col items-center p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                            <div className="w-8 h-8 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full border border-yellow-300 dark:border-yellow-600 mb-1">
+                                                <span className="text-yellow-600 dark:text-yellow-400 text-sm">
+                                                    {badge.icon}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs font-semibold text-gray-900 dark:text-gray-100 text-center">
+                                                {badge.name}
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        ) : (
+                            <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                                No badges unlocked yet!
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {isGameOver && (
@@ -981,6 +1257,34 @@ function App() {
           onStartUnlimited={handleStartUnlimited}
           onStartWordOfTheDay={handleStartWordOfTheDay}
           onShowStats={handleShowStats}
+          onPlayWithFriends={handlePlayWithFriends}
+        />
+      )}
+
+      {showResultPlayback && currentResult && (
+        <ResultPlaybackScreen
+          result={currentResult}
+          onViewPlayback={() => {
+            setShowResultPlayback(false);
+            setShowPlaybackView(true);
+          }}
+          onClose={() => {
+            setShowResultPlayback(false);
+            setCurrentResult(null);
+            setShowStartScreen(true);
+          }}
+        />
+      )}
+
+      {showPlaybackView && currentResult && (
+        <PlaybackView
+          result={currentResult}
+          solution={currentResult.word}
+          onClose={() => {
+            setShowPlaybackView(false);
+            setCurrentResult(null);
+            setShowStartScreen(true);
+          }}
         />
       )}
 
@@ -1081,6 +1385,40 @@ function App() {
         </div>
       )}
 
+      {/* New Badge Notification */}
+      {newBadgeNotification && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm mx-4 text-center">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              New Badge Unlocked!
+            </h2>
+            <div className="text-4xl mb-4">{newBadgeNotification.icon}</div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {newBadgeNotification.name}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {newBadgeNotification.description}
+            </p>
+            <button
+              onClick={() => setNewBadgeNotification(null)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold"
+            >
+              Awesome!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Word Challenge Modal */}
+      <WordChallengeModal
+        isOpen={showWordChallenge}
+        onClose={() => setShowWordChallenge(false)}
+        onStartChallenge={() => {}} // No longer used since we removed Play Challenge button
+        validWords={wordListsState?.validWords}
+        shareNative={shareNative}
+      />
+
       {/* Static SEO content section */}
       <section className="hidden" aria-hidden="true">
         <h2>About The Game</h2>
@@ -1148,6 +1486,16 @@ const BarChart4 = createIcon(
       <path d="M7 12v5" />
       <path d="M12 8v9" />
       <path d="M17 4v13" />
+    </>
+);
+
+const Share2 = createIcon(
+    <>
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
     </>
 );
 
