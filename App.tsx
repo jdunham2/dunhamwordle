@@ -446,7 +446,7 @@ function App() {
     if (key.length === 1 && key.match(/[a-z]/i)) {
         const newSequence = (keySequence + key).slice(-6);
         setKeySequence(newSequence);
-        
+
         // Check for cheat codes
         if (newSequence.toUpperCase() === 'JESHUA' || newSequence.toUpperCase() === 'AMARA') {
             dispatch({ type: 'SET_CURRENT_GUESS', payload: state.solution });
@@ -459,48 +459,48 @@ function App() {
             setShowMilesExplosion(true);
             setGameExploded(true);
             setKeySequence(''); // Reset after use
-            
+
             // Add CSS custom properties for explosion animation
             const addExplosionStyles = () => {
               if (typeof document === 'undefined') return; // Skip in test environment
               const tiles = document.querySelectorAll('[role="gridcell"]');
               const keys = document.querySelectorAll('.keyboard-container button');
-              
+
               // Add random scatter values to tiles
               tiles.forEach((tile, index) => {
                 const scatterX = (Math.random() - 0.5) * 200;
                 const scatterY = (Math.random() - 0.5) * 200;
                 const rotation = (Math.random() - 0.5) * 720;
-                
+
                 (tile as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
                 (tile as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
                 (tile as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
                 (tile as HTMLElement).classList.add('tile-exploded');
               });
-              
+
               // Add random scatter values to keys
               keys.forEach((key, index) => {
                 const scatterX = (Math.random() - 0.5) * 300;
                 const scatterY = (Math.random() - 0.5) * 300;
                 const rotation = (Math.random() - 0.5) * 720;
-                
+
                 (key as HTMLElement).style.setProperty('--scatter-x', scatterX.toString());
                 (key as HTMLElement).style.setProperty('--scatter-y', scatterY.toString());
                 (key as HTMLElement).style.setProperty('--scatter-rotation', rotation.toString());
                 (key as HTMLElement).classList.add('key-exploded');
               });
             };
-            
+
             // Apply styles after a short delay to ensure DOM is ready
             setTimeout(addExplosionStyles, 100);
-            
+
             // Auto-reset after 3 seconds
             setTimeout(() => {
                 setShowMilesExplosion(false);
                 setGameExploded(false);
                 dispatch({ type: 'NEW_GAME' });
             }, 3000);
-            
+
             return;
         }
 
