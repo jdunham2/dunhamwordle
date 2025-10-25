@@ -5,6 +5,11 @@ export enum GameStatus {
   Loading = 'loading',
 }
 
+export enum GameMode {
+  Unlimited = 'unlimited',
+  WordOfTheDay = 'wordOfTheDay'
+}
+
 export type TileStatus = 'correct' | 'present' | 'absent' | 'empty' | 'editing';
 export type KeyStatus = 'correct' | 'present' | 'absent' | 'unused';
 
@@ -20,6 +25,19 @@ export interface Stats {
   guessDistribution: { [key: number]: number };
 }
 
+export interface GameModeStats {
+  unlimited: Stats;
+  wordOfTheDay: Stats;
+}
+
+export interface WordOfTheDayCompletion {
+  [dateKey: string]: {
+    completed: boolean;
+    guesses?: number;
+    solution?: string;
+  };
+}
+
 export interface GameState {
   solution: string;
   guesses: string[];
@@ -29,11 +47,13 @@ export interface GameState {
   keyStatuses: KeyStatuses;
   error: string | null;
   isInvalidGuess: boolean;
-  stats: Stats;
+  stats: GameModeStats;
+  wordOfTheDayCompletions: WordOfTheDayCompletion;
+  currentGameMode: GameMode;
 }
 
 export type GameAction =
-  | { type: 'START_GAME'; payload: { solution: string } }
+  | { type: 'START_GAME'; payload: { solution: string; gameMode: GameMode } }
   | { type: 'TYPE_LETTER'; payload: { letter: string } }
   | { type: 'BACKSPACE' }
   | { type: 'SUBMIT_GUESS'; payload: { validWords: Set<string>, guess: string } }

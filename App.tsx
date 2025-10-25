@@ -2,64 +2,114 @@ import React, { useReducer, useEffect, useCallback, useRef, useState, createCont
 import { Grid } from './components/Grid';
 import { Keyboard } from './components/Keyboard';
 import { Boosts } from './components/Boosts';
+import { CalendarPicker } from './components/CalendarPicker';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
-import { GameState, GameAction, GameStatus, Stats, KeyStatuses } from './types';
+import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
 import './App.css';
 
 
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
 const STATS_KEY = 'word-guess-stats';
+const WORD_OF_THE_DAY_COMPLETIONS_KEY = 'word-of-the-day-completions';
 const MODAL_ANIMATION_DELAY = 1200; // ms for 5 tiles to flip
-
-// Game modes
-enum GameMode {
-  Unlimited = 'unlimited',
-  WordOfTheDay = 'wordOfTheDay'
-}
 
 // Context for hint tiles to avoid prop drilling through Grid/Row
 export const AppContext = createContext<{ hintIndices: Set<number>; solution: string }>({ hintIndices: new Set(), solution: '' });
 
 // --- Stats Persistence ---
-const loadStats = (): Stats => {
-  const storedStats = localStorage.getItem(STATS_KEY);
+const createDefaultStats = () => {
   const defaultDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  return { gamesPlayed: 0, wins: 0, currentStreak: 0, maxStreak: 0, guessDistribution: defaultDistribution };
+};
+
+const loadStats = (): GameModeStats => {
+  const storedStats = localStorage.getItem(STATS_KEY);
+  const defaultStats = createDefaultStats();
+  
   if (storedStats) {
     try {
       const parsed = JSON.parse(storedStats);
-      if ('gamesPlayed' in parsed && 'wins' in parsed && 'currentStreak' in parsed && 'maxStreak' in parsed) {
-        // Migration for older stats objects
-        if (!parsed.guessDistribution) {
-          parsed.guessDistribution = defaultDistribution;
-        }
-        return parsed as Stats;
+      
+      // Check if it's the old format (single stats object)
+      if ('gamesPlayed' in parsed && !('unlimited' in parsed)) {
+        // Migrate old format to new format
+        const migratedStats: GameModeStats = {
+          unlimited: {
+            gamesPlayed: parsed.gamesPlayed || 0,
+            wins: parsed.wins || 0,
+            currentStreak: parsed.currentStreak || 0,
+            maxStreak: parsed.maxStreak || 0,
+            guessDistribution: parsed.guessDistribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+          },
+          wordOfTheDay: createDefaultStats()
+        };
+        return migratedStats;
+      }
+      
+      // New format
+      if ('unlimited' in parsed && 'wordOfTheDay' in parsed) {
+        return {
+          unlimited: { ...defaultStats, ...parsed.unlimited },
+          wordOfTheDay: { ...defaultStats, ...parsed.wordOfTheDay }
+        };
       }
     } catch {
       // If parsing fails, fall back to default
     }
   }
-  return { gamesPlayed: 0, wins: 0, currentStreak: 0, maxStreak: 0, guessDistribution: defaultDistribution };
+  
+  return {
+    unlimited: createDefaultStats(),
+    wordOfTheDay: createDefaultStats()
+  };
 };
 
-const saveStats = (stats: Stats) => {
+const saveStats = (stats: GameModeStats) => {
   localStorage.setItem(STATS_KEY, JSON.stringify(stats));
 };
 
-// Word of the Day Algorithm
-const getWordOfTheDay = (solutions: string[]): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1; // 1-12
-  const day = today.getDate();
+const loadWordOfTheDayCompletions = (): WordOfTheDayCompletion => {
+  const stored = localStorage.getItem(WORD_OF_THE_DAY_COMPLETIONS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // If parsing fails, fall back to empty object
+    }
+  }
+  return {};
+};
 
-  // Create a deterministic seed from the date
-  const seed = year * 10000 + month * 100 + day;
+const saveWordOfTheDayCompletions = (completions: WordOfTheDayCompletion) => {
+  localStorage.setItem(WORD_OF_THE_DAY_COMPLETIONS_KEY, JSON.stringify(completions));
+};
 
-  // Use the seed to select a word from the solutions array
-  const wordIndex = seed % solutions.length;
-  return solutions[wordIndex];
+// Word of the Day Algorithm - More random approach
+const getWordOfTheDay = (solutions: string[], date?: Date): string => {
+  const targetDate = date || new Date();
+  const year = targetDate.getFullYear();
+  const month = targetDate.getMonth() + 1; // 1-12
+  const day = targetDate.getDate();
+
+  // Create a more complex seed using multiple mathematical operations
+  const baseSeed = year * 10000 + month * 100 + day;
+  
+  // Apply multiple transformations to make it less predictable
+  const seed1 = (baseSeed * 9301 + 49297) % 233280;
+  const seed2 = (seed1 * 9301 + 49297) % 233280;
+  const seed3 = (seed2 * 9301 + 49297) % 233280;
+  
+  // Combine seeds with additional randomness factors
+  const finalSeed = (seed1 + seed2 * 7 + seed3 * 13) % solutions.length;
+  
+  return solutions[finalSeed];
+};
+
+// Helper function to get date key for storage
+const getDateKey = (date: Date): string => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 const initialState: GameState = {
@@ -72,6 +122,8 @@ const initialState: GameState = {
   error: null,
   isInvalidGuess: false,
   stats: loadStats(),
+  wordOfTheDayCompletions: loadWordOfTheDayCompletions(),
+  currentGameMode: GameMode.Unlimited,
 };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -80,7 +132,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...initialState,
         stats: state.stats, // Persist stats across new games
+        wordOfTheDayCompletions: state.wordOfTheDayCompletions, // Persist completions
         solution: action.payload.solution,
+        currentGameMode: action.payload.gameMode,
         gameStatus: GameStatus.Playing,
       };
     case 'NEW_GAME':
@@ -149,22 +203,40 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         : GameStatus.Playing;
 
       let updatedStats = state.stats;
+      let updatedCompletions = state.wordOfTheDayCompletions;
+      
       if (newGameStatus === GameStatus.Won || newGameStatus === GameStatus.Lost) {
+          // Update stats for the current game mode
           updatedStats = { ...state.stats };
-          updatedStats.gamesPlayed += 1;
+          const currentModeStats = { ...updatedStats[state.currentGameMode] };
+          
+          currentModeStats.gamesPlayed += 1;
           if (isWin) {
-              updatedStats.wins += 1;
-              updatedStats.currentStreak += 1;
-              if (updatedStats.currentStreak > updatedStats.maxStreak) {
-                  updatedStats.maxStreak = updatedStats.currentStreak;
+              currentModeStats.wins += 1;
+              currentModeStats.currentStreak += 1;
+              if (currentModeStats.currentStreak > currentModeStats.maxStreak) {
+                  currentModeStats.maxStreak = currentModeStats.maxStreak;
               }
               const guessNum = state.currentGuessIndex + 1;
-              const newDistribution = { ...updatedStats.guessDistribution };
+              const newDistribution = { ...currentModeStats.guessDistribution };
               newDistribution[guessNum] = (newDistribution[guessNum] || 0) + 1;
-              updatedStats.guessDistribution = newDistribution;
+              currentModeStats.guessDistribution = newDistribution;
+              
+              // Update Word of the Day completion if this is a Word of the Day game
+              if (state.currentGameMode === GameMode.WordOfTheDay) {
+                updatedCompletions = { ...state.wordOfTheDayCompletions };
+                const dateKey = getDateKey(new Date());
+                updatedCompletions[dateKey] = {
+                  completed: true,
+                  guesses: guessNum,
+                  solution: state.solution
+                };
+              }
           } else {
-              updatedStats.currentStreak = 0;
+              currentModeStats.currentStreak = 0;
           }
+          
+          updatedStats[state.currentGameMode] = currentModeStats;
       }
 
       return {
@@ -175,7 +247,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         gameStatus: newGameStatus,
         keyStatuses: newKeyStatuses,
         error: null,
-        stats: updatedStats
+        stats: updatedStats,
+        wordOfTheDayCompletions: updatedCompletions
       };
     }
     case 'SET_ERROR':
@@ -212,7 +285,7 @@ function App() {
   const [keySequence, setKeySequence] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.Unlimited);
-  const [showWordOfTheDayConfirm, setShowWordOfTheDayConfirm] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Enable audio on first user interaction
@@ -223,7 +296,7 @@ function App() {
     }
   }, [audioEnabled]);
 
-  const startNewGame = useCallback(async (mode: GameMode = GameMode.Unlimited) => {
+  const startNewGame = useCallback(async (mode: GameMode = GameMode.Unlimited, date?: Date) => {
     if (!wordLists.current) {
         try {
             wordLists.current = await loadWordLists();
@@ -236,21 +309,24 @@ function App() {
 
     let newSolution: string;
     if (mode === GameMode.WordOfTheDay) {
-        newSolution = getWordOfTheDay(solutions);
+        newSolution = getWordOfTheDay(solutions, date);
     } else {
         newSolution = solutions[Math.floor(Math.random() * solutions.length)];
     }
 
     setGameMode(mode);
-    dispatch({ type: 'START_GAME', payload: { solution: newSolution } });
+    dispatch({ type: 'START_GAME', payload: { solution: newSolution, gameMode: mode } });
   }, []);
 
-  // Reset hints only when starting a completely new game
+  // Save stats when they change
   useEffect(() => {
-    if (state.gameStatus === GameStatus.Loading) {
-      setRevealedHintIndices(new Set());
-    }
-  }, [state.gameStatus]);
+    saveStats(state.stats);
+  }, [state.stats]);
+
+  // Save Word of the Day completions when they change
+  useEffect(() => {
+    saveWordOfTheDayCompletions(state.wordOfTheDayCompletions);
+  }, [state.wordOfTheDayCompletions]);
 
   // Calculate which hints should be visible based on:
   // 1. What indices were revealed (revealedHintIndices)
@@ -446,9 +522,10 @@ function App() {
       return !state.guesses.some(g => g && g[i] === state.solution[i]);
   });
 
-  const winPercentage = state.stats.gamesPlayed > 0 ? Math.round((state.stats.wins / state.stats.gamesPlayed) * 100) : 0;
+  const currentModeStats = state.stats[state.currentGameMode];
+  const winPercentage = currentModeStats.gamesPlayed > 0 ? Math.round((currentModeStats.wins / currentModeStats.gamesPlayed) * 100) : 0;
 
-  const distEntries = Object.entries(state.stats.guessDistribution);
+  const distEntries = Object.entries(currentModeStats.guessDistribution);
   const maxDistCount = Math.max(...distEntries.map(([, count]) => count as number), 1);
 
   const handlePlayAgain = () => {
@@ -463,12 +540,11 @@ function App() {
   };
 
   const handleWordOfTheDayClick = () => {
-    setShowWordOfTheDayConfirm(true);
+    setShowCalendar(true);
   };
 
-  const handleConfirmWordOfTheDay = () => {
-    setShowWordOfTheDayConfirm(false);
-    startNewGame(GameMode.WordOfTheDay);
+  const handleSelectDate = (date: Date) => {
+    startNewGame(GameMode.WordOfTheDay, date);
   };
 
   const handlePlayUnlimited = () => {
@@ -687,7 +763,7 @@ function App() {
 
 
       {showHelp && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
+        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
             <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
                  <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setShowHelp(false)} aria-label="Close help">
                     <X className="h-6 w-6"/>
@@ -736,7 +812,7 @@ function App() {
       )}
 
       {showStats && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowStats(false)}>
+        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowStats(false)}>
             <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
                  <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setShowStats(false)} aria-label="Close statistics">
                     <X className="h-6 w-6"/>
@@ -752,7 +828,7 @@ function App() {
                 <h2 className="text-2xl font-bold mb-6 text-center">Statistics</h2>
                 <div className="flex justify-around text-center mb-6">
                     <div>
-                        <p className="text-4xl font-bold">{state.stats.gamesPlayed}</p>
+                        <p className="text-4xl font-bold">{currentModeStats.gamesPlayed}</p>
                         <p className="text-xs text-gray-400">Played</p>
                     </div>
                      <div>
@@ -760,11 +836,11 @@ function App() {
                         <p className="text-xs text-gray-400">Win %</p>
                     </div>
                      <div>
-                        <p className="text-4xl font-bold">{state.stats.currentStreak}</p>
+                        <p className="text-4xl font-bold">{currentModeStats.currentStreak}</p>
                         <p className="text-xs text-gray-400">Current Streak</p>
                     </div>
                      <div>
-                        <p className="text-4xl font-bold">{state.stats.maxStreak}</p>
+                        <p className="text-4xl font-bold">{currentModeStats.maxStreak}</p>
                         <p className="text-xs text-gray-400">Max Streak</p>
                     </div>
                 </div>
@@ -812,36 +888,12 @@ function App() {
         </div>
       )}
 
-      {showWordOfTheDayConfirm && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowWordOfTheDayConfirm(false)}>
-            <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
-                 <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setShowWordOfTheDayConfirm(false)} aria-label="Close">
-                    <X className="h-6 w-6"/>
-                </button>
-
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold mb-4">Word of the Day</h2>
-                    <p className="mb-6 text-gray-300">
-                        Play today's special word! Everyone in the family will get the same word,
-                        making it perfect for comparing strategies and celebrating together.
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                        <button
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
-                            onClick={handleConfirmWordOfTheDay}
-                        >
-                            Play Word of the Day
-                        </button>
-                        <button
-                            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded"
-                            onClick={() => setShowWordOfTheDayConfirm(false)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      {showCalendar && (
+        <CalendarPicker
+          onClose={() => setShowCalendar(false)}
+          onSelectDate={handleSelectDate}
+          completions={state.wordOfTheDayCompletions}
+        />
       )}
 
       {/* Static SEO content section */}
