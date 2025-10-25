@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface CalendarPickerProps {
@@ -9,9 +9,15 @@ interface CalendarPickerProps {
 
 export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelectDate, completions }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [forceRender, setForceRender] = useState(0);
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+
+  // Force re-render when completions change
+  useEffect(() => {
+    setForceRender(prev => prev + 1);
+  }, [completions]);
 
   const getDateKey = (date: Date): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -74,20 +80,20 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
       let dayClasses = "h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium cursor-pointer transition-colors ";
       
       if (isSelected) {
-        dayClasses += "bg-blue-600 text-white";
+        dayClasses += "bg-blue-500 text-white";
       } else if (isToday(date)) {
         // Current day: blue if not completed, green if completed
         if (completionStatus === 'completed') {
-          dayClasses += "bg-green-600 text-white";
+          dayClasses += "bg-emerald-500 text-white";
         } else {
-          dayClasses += "bg-blue-500 text-white";
+          dayClasses += "bg-blue-400 text-white";
         }
       } else if (completionStatus === 'completed') {
-        dayClasses += "bg-green-600 text-white hover:bg-green-700";
+        dayClasses += "bg-emerald-500 text-white hover:bg-emerald-600";
       } else if (completionStatus === 'not-completed') {
-        dayClasses += "bg-red-600 text-white hover:bg-red-700";
+        dayClasses += "bg-rose-400 text-white hover:bg-rose-500";
       } else if (completionStatus === 'future') {
-        dayClasses += "bg-gray-800 text-gray-500 cursor-not-allowed";
+        dayClasses += "bg-gray-600 text-gray-400 cursor-not-allowed";
       }
 
       days.push(
@@ -149,26 +155,26 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1" key={forceRender}>
             {renderCalendarDays()}
           </div>
         </div>
 
         <div className="flex gap-2 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
             <span className="text-xs text-gray-300">Completed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+            <div className="w-3 h-3 bg-rose-400 rounded-full"></div>
             <span className="text-xs text-gray-300">Not completed</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
             <span className="text-xs text-gray-300">Today</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-800 rounded-full"></div>
+            <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
             <span className="text-xs text-gray-300">Future</span>
           </div>
         </div>
