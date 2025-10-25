@@ -551,7 +551,9 @@ function App() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center relative flex-shrink-0 mb-1 sm:mb-2">
+      {/* IMPORTANT: Layout spacing rules - DO NOT CHANGE without explicit request */}
+      {/* mb-4: Fixed 16px gap between grid and keyboard (not flexible spacing) */}
+      <main className="flex flex-col items-center relative flex-shrink-0 mb-4">
          {state.error && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake whitespace-nowrap">
                 {state.error}
