@@ -92,6 +92,11 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
         dayClasses += "bg-gray-600 text-gray-400 cursor-not-allowed";
       }
 
+      // Add white outline for selected date
+      if (isSelected) {
+        dayClasses += " ring-2 ring-white";
+      }
+
       days.push(
         <div
           key={day}
