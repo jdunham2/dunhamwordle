@@ -10,7 +10,7 @@ interface KeyboardProps {
 const KEY_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['Enter', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace'],
 ];
 
 const Key: React.FC<{
@@ -25,12 +25,14 @@ const Key: React.FC<{
     correct: 'bg-correct text-white',
   };
 
-  const isWideKey = value === 'Enter' || value === 'Backspace';
+  const isWideKey = value === 'Backspace';
 
   return (
     <button
       onClick={() => onClick(value)}
-      className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg flex-1 min-w-0 ${statusClasses[status]}`}
+      className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg ${
+        isWideKey ? 'w-16 sm:w-20 md:w-24 px-2 sm:px-3' : 'flex-1 min-w-0'
+      } ${statusClasses[status]}`}
     >
       {value === 'Backspace' ? (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -64,6 +66,16 @@ export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) =
             {i === 1 && <div className="w-2 sm:w-3 md:w-4" />}
         </div>
       ))}
+      
+      {/* Enter button - separate row */}
+      <div className="flex justify-center px-1">
+        <button
+          onClick={() => onKeyPress('Enter')}
+          className="h-14 sm:h-16 md:h-20 px-8 sm:px-12 md:px-16 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg bg-key-bg hover:bg-gray-600 text-white"
+        >
+          ENTER
+        </button>
+      </div>
     </div>
   );
 };
