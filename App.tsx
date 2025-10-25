@@ -229,16 +229,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 updatedCompletions = { ...state.wordOfTheDayCompletions };
                 const dateToUse = state.selectedDate || new Date();
                 const dateKey = getDateKey(dateToUse);
-                
-                // Debug logging
-                console.log('Storing completion for Word of the Day:', {
-                  selectedDate: state.selectedDate,
-                  dateToUse: dateToUse,
-                  dateKey: dateKey,
-                  guessNum: guessNum,
-                  solution: state.solution
-                });
-                
                 updatedCompletions[dateKey] = {
                   completed: true,
                   guesses: guessNum,

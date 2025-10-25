@@ -49,14 +49,7 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onClose, onSelec
   const getCompletionStatus = (date: Date): 'completed' | 'not-completed' | 'future' => {
     const dateKey = getDateKey(date);
     if (isFutureDate(date)) return 'future';
-    
-    // Debug logging
-    console.log('Checking completion for date:', date.toDateString(), 'key:', dateKey, 'completions:', completions);
-    
-    if (completions[dateKey]?.completed) {
-      console.log('Found completed date:', dateKey);
-      return 'completed';
-    }
+    if (completions[dateKey]?.completed) return 'completed';
     return 'not-completed';
   };
 
