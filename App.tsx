@@ -314,6 +314,11 @@ function App() {
     if (state.gameStatus === GameStatus.Won) {
       if(announcementsRef.current) announcementsRef.current.textContent = "Congratulations, you won!";
       saveStats(state.stats);
+
+      // Trigger confetti celebration
+      const guessCount = state.currentGuessIndex + 1;
+      triggerCelebration(guessCount);
+
       const timer = setTimeout(() => setShowStats(true), MODAL_ANIMATION_DELAY);
       return () => clearTimeout(timer);
     } else if (state.gameStatus === GameStatus.Lost) {
@@ -322,7 +327,7 @@ function App() {
       const timer = setTimeout(() => setShowStats(true), MODAL_ANIMATION_DELAY);
       return () => clearTimeout(timer);
     }
-  }, [state.gameStatus, state.solution, state.stats]);
+  }, [state.gameStatus, state.solution, state.stats, state.currentGuessIndex]);
 
 
   const handleKeyPress = useCallback((key: string) => {
@@ -459,6 +464,62 @@ function App() {
 
   const handlePlayUnlimited = () => {
     startNewGame(GameMode.Unlimited);
+  };
+
+  // Confetti celebration function
+  const triggerCelebration = (guessCount: number) => {
+    if (typeof window !== 'undefined' && (window as any).confetti) {
+      const confetti = (window as any).confetti;
+
+      if (guessCount === 1) {
+        // EPIC celebration for getting it in 1 guess!
+        // Multiple bursts from different positions
+        confetti({
+          particleCount: 300,
+          spread: 150,
+          origin: { y: 0.3 },
+          colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff']
+        });
+
+        // Left side burst
+        setTimeout(() => {
+          confetti({
+            particleCount: 200,
+            spread: 60,
+            origin: { x: 0.2, y: 0.8 },
+            colors: ['#ffd700', '#ff6b6b', '#4ecdc4']
+          });
+        }, 200);
+
+        // Right side burst
+        setTimeout(() => {
+          confetti({
+            particleCount: 200,
+            spread: 60,
+            origin: { x: 0.8, y: 0.8 },
+            colors: ['#45b7d1', '#96ceb4', '#feca57']
+          });
+        }, 400);
+
+        // Final center burst
+        setTimeout(() => {
+          confetti({
+            particleCount: 250,
+            spread: 180,
+            origin: { y: 0.6 },
+            colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd']
+          });
+        }, 800);
+      } else {
+        // Regular celebration for other wins
+        confetti({
+          particleCount: 150,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ['#538d4e', '#b59f3b', '#3a3a3c', '#ffffff']
+        });
+      }
+    }
   };
 
   return (
