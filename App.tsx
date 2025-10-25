@@ -890,7 +890,7 @@ function App() {
 
                 {isGameOver && (
                     <div className="text-center mt-8">
-                        {gameMode === GameMode.WordOfTheDay ? (
+                        {state.currentGameMode === GameMode.WordOfTheDay ? (
                             <button
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
                                 onClick={() => {
