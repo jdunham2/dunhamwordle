@@ -13,6 +13,12 @@ const MAX_GUESSES = 6;
 const STATS_KEY = 'word-guess-stats';
 const MODAL_ANIMATION_DELAY = 1200; // ms for 5 tiles to flip
 
+// Game modes
+enum GameMode {
+  Unlimited = 'unlimited',
+  WordOfTheDay = 'wordOfTheDay'
+}
+
 // Context for hint tiles to avoid prop drilling through Grid/Row
 export const AppContext = createContext<{ hintIndices: Set<number>; solution: string }>({ hintIndices: new Set(), solution: '' });
 
@@ -39,6 +45,21 @@ const loadStats = (): Stats => {
 
 const saveStats = (stats: Stats) => {
   localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+};
+
+// Word of the Day Algorithm
+const getWordOfTheDay = (solutions: string[]): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1; // 1-12
+  const day = today.getDate();
+
+  // Create a deterministic seed from the date
+  const seed = year * 10000 + month * 100 + day;
+
+  // Use the seed to select a word from the solutions array
+  const wordIndex = seed % solutions.length;
+  return solutions[wordIndex];
 };
 
 const initialState: GameState = {
@@ -190,9 +211,11 @@ function App() {
   const [revealedHintIndices, setRevealedHintIndices] = useState<Set<number>>(new Set());
   const [keySequence, setKeySequence] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [gameMode, setGameMode] = useState<GameMode>(GameMode.Unlimited);
+  const [showWordOfTheDayConfirm, setShowWordOfTheDayConfirm] = useState(false);
 
 
-  const startNewGame = useCallback(async () => {
+  const startNewGame = useCallback(async (mode: GameMode = GameMode.Unlimited) => {
     if (!wordLists.current) {
         try {
             wordLists.current = await loadWordLists();
@@ -202,7 +225,15 @@ function App() {
         }
     }
     const { solutions } = wordLists.current;
-    const newSolution = solutions[Math.floor(Math.random() * solutions.length)];
+
+    let newSolution: string;
+    if (mode === GameMode.WordOfTheDay) {
+        newSolution = getWordOfTheDay(solutions);
+    } else {
+        newSolution = solutions[Math.floor(Math.random() * solutions.length)];
+    }
+
+    setGameMode(mode);
     dispatch({ type: 'START_GAME', payload: { solution: newSolution } });
   }, []);
 
@@ -417,6 +448,19 @@ function App() {
     }
   };
 
+  const handleWordOfTheDayClick = () => {
+    setShowWordOfTheDayConfirm(true);
+  };
+
+  const handleConfirmWordOfTheDay = () => {
+    setShowWordOfTheDayConfirm(false);
+    startNewGame(GameMode.WordOfTheDay);
+  };
+
+  const handlePlayUnlimited = () => {
+    startNewGame(GameMode.Unlimited);
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden lg:justify-center" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
@@ -437,6 +481,9 @@ function App() {
         </div>
         <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-wider">WORDLE</h1>
         <div className="flex items-center gap-2">
+          <button onClick={handleWordOfTheDayClick} aria-label="Word of the Day">
+            <Calendar className="h-5 w-5 text-gray-400 hover:text-white" />
+          </button>
           <button onClick={() => dispatch({ type: 'NEW_GAME' })} aria-label="New Game">
              <RefreshCw className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
@@ -576,14 +623,55 @@ function App() {
 
                 {isGameOver && (
                     <div className="text-center mt-8">
-                        <button
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
-                            onClick={handlePlayAgain}
-                        >
-                            Play Again
-                        </button>
+                        {gameMode === GameMode.WordOfTheDay ? (
+                            <button
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                                onClick={handlePlayUnlimited}
+                            >
+                                Play Unlimited Wordle
+                            </button>
+                        ) : (
+                            <button
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
+                                onClick={handlePlayAgain}
+                            >
+                                Play Again
+                            </button>
+                        )}
                     </div>
                 )}
+            </div>
+        </div>
+      )}
+
+      {showWordOfTheDayConfirm && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4" onClick={() => setShowWordOfTheDayConfirm(false)}>
+            <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
+                 <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setShowWordOfTheDayConfirm(false)} aria-label="Close">
+                    <X className="h-6 w-6"/>
+                </button>
+
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold mb-4">Word of the Day</h2>
+                    <p className="mb-6 text-gray-300">
+                        Play today's special word! Everyone in the family will get the same word,
+                        making it perfect for comparing strategies and celebrating together.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
+                            onClick={handleConfirmWordOfTheDay}
+                        >
+                            Play Word of the Day
+                        </button>
+                        <button
+                            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded"
+                            onClick={() => setShowWordOfTheDayConfirm(false)}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
       )}
@@ -637,6 +725,15 @@ const Download = createIcon(
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7,10 12,15 17,10" />
         <line x1="12" y1="15" x2="12" y2="3" />
+    </>
+);
+
+const Calendar = createIcon(
+    <>
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
     </>
 );
 
