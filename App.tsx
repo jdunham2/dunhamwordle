@@ -6,7 +6,6 @@ import { CalendarPicker } from './components/CalendarPicker';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
-import { Explode } from 'react-explode';
 import './App.css';
 
 
@@ -440,6 +439,14 @@ function App() {
             setShowMilesExplosion(true);
             setGameExploded(true);
             setKeySequence(''); // Reset after use
+
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+                setShowMilesExplosion(false);
+                setGameExploded(false);
+                dispatch({ type: 'NEW_GAME' });
+            }, 3000);
+
             return;
         }
 
@@ -925,19 +932,40 @@ function App() {
       {/* Miles Easter Egg - Explosion */}
       {showMilesExplosion && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          <Explode
-            onComplete={() => {
-              setShowMilesExplosion(false);
-              // Reset the game after explosion
-              setTimeout(() => {
-                setGameExploded(false);
-                dispatch({ type: 'NEW_GAME' });
-              }, 1000);
-            }}
-            duration={2000}
-            particleCount={100}
-            colors={['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff']}
-          />
+          {/* Explosion particles */}
+          <div className="absolute inset-0">
+            {Array.from({ length: 50 }, (_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${1 + Math.random() * 2}s`
+                }}
+              />
+            ))}
+            {Array.from({ length: 30 }, (_, i) => (
+              <div
+                key={`red-${i}`}
+                className="absolute w-1 h-1 bg-red-500 rounded-full animate-pulse"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${0.5 + Math.random() * 1}s`
+                }}
+              />
+            ))}
+          </div>
+
+          {/* BOOM text */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="text-8xl font-bold text-yellow-400 animate-bounce">
+              💥 BOOM! 💥
+            </div>
+          </div>
         </div>
       )}
 
