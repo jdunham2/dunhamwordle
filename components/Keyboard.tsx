@@ -30,9 +30,7 @@ const Key: React.FC<{
   return (
     <button
       onClick={() => onClick(value)}
-      className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg ${
-        isWideKey ? 'w-16 sm:w-20 md:w-24 px-2 sm:px-3' : 'flex-1 min-w-0'
-      } ${statusClasses[status]}`}
+      className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg flex-1 min-w-0 ${statusClasses[status]}`}
     >
       {value === 'Backspace' ? (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
