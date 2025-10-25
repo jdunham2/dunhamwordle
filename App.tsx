@@ -6,7 +6,6 @@ import { CalendarPicker } from './components/CalendarPicker';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion } from './types';
-import { Explode } from 'react-explode';
 import './App.css';
 
 
@@ -440,6 +439,14 @@ function App() {
             setShowMilesExplosion(true);
             setGameExploded(true);
             setKeySequence(''); // Reset after use
+            
+            // Auto-close explosion and reset game after 3 seconds
+            setTimeout(() => {
+                setShowMilesExplosion(false);
+                setGameExploded(false);
+                dispatch({ type: 'NEW_GAME' });
+            }, 3000);
+            
             return;
         }
 
@@ -925,19 +932,14 @@ function App() {
       {/* Miles Easter Egg - Explosion */}
       {showMilesExplosion && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          <Explode
-            onComplete={() => {
-              setShowMilesExplosion(false);
-              // Reset the game after explosion
-              setTimeout(() => {
-                setGameExploded(false);
-                dispatch({ type: 'NEW_GAME' });
-              }, 1000);
-            }}
-            duration={2000}
-            particleCount={100}
-            colors={['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff']}
-          />
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 opacity-80 animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-white animate-bounce">
+            💥 BOOM! 💥
+          </div>
+          <div className="absolute top-1/4 left-1/4 text-4xl animate-spin">🎆</div>
+          <div className="absolute top-1/4 right-1/4 text-4xl animate-spin" style={{animationDelay: '0.5s'}}>🎆</div>
+          <div className="absolute bottom-1/4 left-1/4 text-4xl animate-spin" style={{animationDelay: '1s'}}>🎆</div>
+          <div className="absolute bottom-1/4 right-1/4 text-4xl animate-spin" style={{animationDelay: '1.5s'}}>🎆</div>
         </div>
       )}
 
