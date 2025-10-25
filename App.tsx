@@ -483,15 +483,15 @@ function App() {
         console.log('Audio not enabled yet, skipping:', audioFile);
         return;
       }
-      
+
       console.log('Attempting to play audio:', audioFile);
-      
+
       try {
         const audio = new Audio(audioFile);
         audio.volume = 0.8; // Set volume to 80%
         audio.preload = 'auto';
         audio.crossOrigin = 'anonymous'; // Add CORS support
-        
+
         // Add event listeners for debugging
         audio.addEventListener('loadstart', () => console.log('Audio load started:', audioFile));
         audio.addEventListener('canplay', () => console.log('Audio can play:', audioFile));
@@ -504,10 +504,10 @@ function App() {
             src: audio.src
           });
         });
-        
+
         // Try to play the audio
         const playPromise = audio.play();
-        
+
         if (playPromise !== undefined) {
           playPromise.then(() => {
             console.log('Audio played successfully:', audioFile);
@@ -530,10 +530,10 @@ function App() {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         if (isEpic) {
           // Epic sound for 1-guess win
           oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
@@ -552,7 +552,7 @@ function App() {
           oscillator.start(audioContext.currentTime);
           oscillator.stop(audioContext.currentTime + 0.3);
         }
-        
+
         console.log('Played fallback celebration sound');
       } catch (err) {
         console.log('Fallback sound failed:', err);

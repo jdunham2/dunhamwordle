@@ -31,12 +31,12 @@ const Key: React.FC<{
     <button
       onClick={() => onClick(value)}
       className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg ${
-        isWideKey ? 'flex-grow px-3 sm:px-4' : 'flex-1 min-w-0'
+        isWideKey ? 'w-16 sm:w-20 md:w-24 px-2 sm:px-3' : 'flex-1 min-w-0'
       } ${statusClasses[status]}`}
     >
       {value === 'Backspace' ? (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 002.828 0L21 12M3 12l6.414-6.414a2 2 0 012.828 0L21 12" />
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7l-5 5 5 5M4 12h16" />
         </svg>
       ) : (
         value
