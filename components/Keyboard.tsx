@@ -30,8 +30,8 @@ const Key: React.FC<{
   return (
     <button
       onClick={() => onClick(value)}
-      className={`h-12 sm:h-14 md:h-16 rounded font-bold uppercase flex items-center justify-center text-sm sm:text-base ${
-        isWideKey ? 'flex-grow px-2 sm:px-3' : 'flex-1 min-w-0'
+      className={`h-14 sm:h-16 md:h-20 rounded font-bold uppercase flex items-center justify-center text-base sm:text-lg ${
+        isWideKey ? 'flex-grow px-3 sm:px-4' : 'flex-1 min-w-0'
       } ${statusClasses[status]}`}
     >
       {value === 'Backspace' ? (
@@ -49,8 +49,8 @@ export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) =
   return (
     <div className="flex flex-col gap-0.5 sm:gap-1 w-full keyboard-container" role="group" aria-label="On-screen keyboard">
       {KEY_ROWS.map((row, i) => (
-        <div key={i} className="flex justify-center gap-0.5 sm:gap-1 w-full">
-            {i === 1 && <div className="flex-grow max-w-[8px] sm:max-w-[12px] md:max-w-[20px]" />}
+        <div key={i} className="flex gap-0.5 sm:gap-1 w-full px-1">
+            {i === 1 && <div className="w-2 sm:w-3 md:w-4" />}
             {row.map((key) => (
                 <Key
                     key={key}
@@ -59,7 +59,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, keyStatuses }) =
                     onClick={onKeyPress}
                 />
             ))}
-            {i === 1 && <div className="flex-grow max-w-[8px] sm:max-w-[12px] md:max-w-[20px]" />}
+            {i === 1 && <div className="w-2 sm:w-3 md:w-4" />}
         </div>
       ))}
     </div>

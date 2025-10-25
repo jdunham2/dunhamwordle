@@ -530,39 +530,45 @@ function App() {
                  <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setShowHelp(false)} aria-label="Close help">
                     <X className="h-6 w-6"/>
                 </button>
-                <h2 className="text-2xl font-bold mb-4 text-center">How to Play</h2>
-                <p className="mb-2">Guess the word in 6 tries.</p>
-                <ul className="list-disc list-inside mb-4 space-y-2">
-                    <li>Each guess must be a valid 5-letter word.</li>
-                    <li>Hit the enter button to submit.</li>
-                    <li>After each guess, the color of the tiles will change to show how close your guess was to the word.</li>
-                </ul>
-                <div className="border-b border-gray-600 my-4"></div>
-                <strong className="block mb-2">Examples</strong>
-                <div className="flex justify-center gap-2 mb-2">
-                    <div className="w-12 h-12 flex items-center justify-center bg-correct text-white text-2xl font-bold border-2 border-transparent">R</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">E</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">A</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">C</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">T</div>
+                <h2 className="text-2xl font-bold mb-4 text-center">Game Features</h2>
+
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3 text-green-400">Special Boosts</h3>
+                    <div className="space-y-3">
+                        <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm flex-shrink-0">💡</div>
+                            <div>
+                                <p className="font-semibold">Reveal Hint</p>
+                                <p className="text-sm text-gray-300">Shows you one letter from the solution word. Perfect for getting unstuck!</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center text-white font-bold text-sm flex-shrink-0">❌</div>
+                            <div>
+                                <p className="font-semibold">Eliminate Letters</p>
+                                <p className="text-sm text-gray-300">Removes 3 wrong letters from the keyboard, making it easier to focus on the right ones.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p className="mb-4"><span className="font-bold">R</span> is in the word and in the correct spot.</p>
-                <div className="flex justify-center gap-2 mb-2">
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">L</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-present text-white text-2xl font-bold border-2 border-transparent">O</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">G</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">I</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">C</div>
+
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3 text-blue-400">Word of the Day</h3>
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center text-white font-bold text-sm flex-shrink-0">📅</div>
+                        <div>
+                            <p className="font-semibold">Family Challenge</p>
+                            <p className="text-sm text-gray-300">Everyone gets the same word each day! Perfect for comparing strategies and celebrating together.</p>
+                        </div>
+                    </div>
                 </div>
-                <p className="mb-4"><span className="font-bold">O</span> is in the word but in the wrong spot.</p>
-                 <div className="flex justify-center gap-2 mb-2">
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">S</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">T</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-absent text-white text-2xl font-bold border-2 border-transparent">Y</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">L</div>
-                    <div className="w-12 h-12 flex items-center justify-center bg-zinc-900 text-white text-2xl font-bold border-2 border-tile-border">E</div>
+
+                <div className="border-t border-gray-600 pt-4">
+                    <h3 className="text-lg font-semibold mb-2 text-yellow-400">Want New Features?</h3>
+                    <p className="text-sm text-gray-300">
+                        If there are features the family wants, just ask me! I'm always happy to add new things to make the game more fun.
+                    </p>
                 </div>
-                <p className="mb-4"><span className="font-bold">Y</span> is not in the word in any spot.</p>
             </div>
         </div>
       )}
