@@ -1,4 +1,4 @@
-const CACHE_NAME = 'word-guess-cache-v9';
+const CACHE_NAME = 'word-guess-cache-v10';
 const GHPATH = '/dunhamwordle';
 
 // Core files that should always be cached
