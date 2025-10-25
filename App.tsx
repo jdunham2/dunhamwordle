@@ -483,22 +483,31 @@ function App() {
         console.log('Audio not enabled yet, skipping:', audioFile);
         return;
       }
-
+      
       console.log('Attempting to play audio:', audioFile);
-
+      
       try {
         const audio = new Audio(audioFile);
         audio.volume = 0.8; // Set volume to 80%
         audio.preload = 'auto';
-
+        audio.crossOrigin = 'anonymous'; // Add CORS support
+        
         // Add event listeners for debugging
         audio.addEventListener('loadstart', () => console.log('Audio load started:', audioFile));
         audio.addEventListener('canplay', () => console.log('Audio can play:', audioFile));
-        audio.addEventListener('error', (e) => console.log('Audio error:', e, audioFile));
-
+        audio.addEventListener('error', (e) => {
+          console.log('Audio error:', e, audioFile);
+          console.log('Audio error details:', {
+            error: audio.error,
+            networkState: audio.networkState,
+            readyState: audio.readyState,
+            src: audio.src
+          });
+        });
+        
         // Try to play the audio
         const playPromise = audio.play();
-
+        
         if (playPromise !== undefined) {
           playPromise.then(() => {
             console.log('Audio played successfully:', audioFile);
@@ -515,12 +524,49 @@ function App() {
       }
     };
 
+    // Fallback: Generate celebration sound using Web Audio API
+    const playFallbackSound = (isEpic: boolean) => {
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        if (isEpic) {
+          // Epic sound for 1-guess win
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+          oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.3);
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.5);
+        } else {
+          // Regular sound for other wins
+          oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.3);
+        }
+        
+        console.log('Played fallback celebration sound');
+      } catch (err) {
+        console.log('Fallback sound failed:', err);
+      }
+    };
+
     if (typeof window !== 'undefined' && (window as any).confetti) {
       const confetti = (window as any).confetti;
 
       if (guessCount === 1) {
         // Play special audio for 1-guess win
         playAudio('/dunhamwordle/audio/mom-awesome.mp3');
+        // Fallback to generated sound if MP3 fails
+        setTimeout(() => playFallbackSound(true), 100);
         // EPIC celebration for getting it in 1 guess!
         // Multiple bursts from different positions
         confetti({
@@ -562,6 +608,8 @@ function App() {
       } else {
         // Play regular audio for other wins
         playAudio('/dunhamwordle/audio/mom-you-did-it.mp3');
+        // Fallback to generated sound if MP3 fails
+        setTimeout(() => playFallbackSound(false), 100);
         // Regular celebration for other wins
         confetti({
           particleCount: 150,
