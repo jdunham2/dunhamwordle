@@ -19,6 +19,9 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
 }) => {
   const [customWord, setCustomWord] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const [hasShared, setHasShared] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus the input when modal opens
@@ -56,25 +59,38 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
     try {
       const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited);
       const url = generateChallengeUrl(challenge);
+      setShareUrl(url);
 
       // Try native share first
       const shared = await shareNative(
         url,
-        'Dunham Wordle',
-        `Can you guess my word?`
+        'Dunham Wordle — Play with Friends',
+        `I made you a Play with Friends challenge in Dunham Wordle! Tap to play and then send me your results.`
       );
 
       if (!shared) {
         // Fallback to clipboard
-        await navigator.clipboard.writeText(url);
-        alert('Challenge link copied to clipboard!');
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopyStatus('copied');
+        } catch {
+          const textArea = document.createElement('textarea');
+          textArea.value = url;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          setCopyStatus('copied');
+        }
       }
 
-      onClose();
+      // Show success state so it's clear they're done
+      setHasShared(true);
     } catch (error) {
       // Final fallback for older browsers
       const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited);
       const url = generateChallengeUrl(challenge);
+      setShareUrl(url);
 
       const textArea = document.createElement('textarea');
       textArea.value = url;
@@ -82,8 +98,8 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert('Challenge link copied to clipboard!');
-      onClose();
+      setCopyStatus('copied');
+      setHasShared(true);
     } finally {
       setIsValidating(false);
     }
@@ -96,53 +112,123 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
       onKeyUp={(e) => e.stopPropagation()}
     >
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-gray-100 mb-4 text-center">
-          Create Word Challenge
-        </h2>
+        {!hasShared ? (
+          <>
+            <h2 className="text-2xl font-bold text-gray-100 mb-1 text-center">
+              Play with Friends
+            </h2>
+            <p className="text-center text-gray-400 mb-4">Create a custom word and share it!</p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Enter a 5-letter word:
-            </label>
-            <input
-              ref={inputRef}
-              type="text"
-              value={customWord}
-              onChange={(e) => setCustomWord(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.stopPropagation()}
-              onKeyUp={(e) => e.stopPropagation()}
-              maxLength={5}
-              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-100 text-center text-lg font-mono tracking-widest"
-              placeholder="WORD"
-            />
-          </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Enter a 5-letter word:
+                </label>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={customWord}
+                  onChange={(e) => setCustomWord(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  maxLength={5}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-100 text-center text-lg font-mono tracking-widest"
+                  placeholder="WORD"
+                />
+              </div>
 
-          <div className="text-sm text-gray-400 bg-gray-700 p-3 rounded">
-            <p className="font-medium mb-1">Challenge Rules:</p>
-            <ul className="text-xs space-y-1">
-              <li>• Recipients will play your custom word</li>
-              <li>• The recipient will have the option to send you their results back to you</li>
-            </ul>
-          </div>
-        </div>
+              <div className="text-sm text-gray-300 bg-gray-700 p-3 rounded">
+                <p className="font-medium mb-1">How it works:</p>
+                <ul className="text-xs space-y-1 text-gray-300">
+                  <li>• Tap "Share Challenge Link" to open your phone’s share dialog</li>
+                  <li>• Send it anywhere (Messages, Messenger, etc.)</li>
+                  <li>• After sharing, you’re done — just close this window</li>
+                </ul>
+              </div>
+            </div>
 
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={handleShareChallenge}
-            disabled={customWord.length !== 5 || isValidating}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded"
-          >
-            {isValidating ? 'Creating...' : 'Share Challenge'}
-          </button>
-        </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleShareChallenge}
+                disabled={customWord.length !== 5 || isValidating}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded"
+              >
+                {isValidating ? 'Creating…' : 'Share Challenge Link'}
+              </button>
+            </div>
 
-        <button
-          onClick={onClose}
-          className="w-full mt-3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Cancel
-        </button>
+            <button
+              onClick={onClose}
+              className="w-full mt-3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">✅</div>
+              <h2 className="text-2xl font-bold text-gray-100">Challenge Shared</h2>
+              <p className="text-sm text-gray-300 mt-2">You can close this window now. If the share dialog didn’t open, copy your link below.</p>
+            </div>
+
+            {shareUrl && (
+              <div className="bg-gray-700 p-3 rounded mb-4">
+                <label className="block text-xs text-gray-300 mb-2">Your challenge link</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    readOnly
+                    value={shareUrl}
+                    className="flex-1 px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-gray-100 text-xs"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!shareUrl) return;
+                      try {
+                        await navigator.clipboard.writeText(shareUrl);
+                        setCopyStatus('copied');
+                      } catch {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = shareUrl;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        setCopyStatus('copied');
+                      }
+                    }}
+                    className="bg-gray-600 hover:bg-gray-500 text-white text-sm font-semibold py-2 px-3 rounded whitespace-nowrap"
+                  >
+                    {copyStatus === 'copied' ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (shareUrl) {
+                    shareNative(
+                      shareUrl,
+                      'Dunham Wordle — Play with Friends',
+                      `I made you a Play with Friends challenge in Dunham Wordle! Tap to play and then send me your results.`
+                    );
+                  }
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Share Again
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Done
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

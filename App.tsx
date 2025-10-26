@@ -450,30 +450,28 @@ function App() {
         console.log('Generated URL:', resultUrl);
         console.log('=============================');
 
-        // Show result sharing option
+        // Show native share to reply with results
         setTimeout(async () => {
-          if (confirm(`Challenge completed! ${isWin ? 'You solved it!' : 'Better luck next time!'}\n\nShare your results back?`)) {
-            const shared = await shareNative(
-              resultUrl,
-              'Word Challenge Results',
-              `I ${isWin ? 'solved' : 'attempted'} your word challenge in ${result.guesses.filter(guess => guess.trim() !== '').length} guesses!`
-            );
+          const shared = await shareNative(
+            resultUrl,
+            'Dunham Wordle — Play with Friends',
+            `I just ${isWin ? 'solved' : 'played'} your Play with Friends challenge in Dunham Wordle in ${result.guesses.filter(guess => guess.trim() !== '').length} guesses!`
+          );
 
-            if (!shared) {
-              // Fallback to clipboard
-              try {
-                await navigator.clipboard.writeText(resultUrl);
-                alert('Result link copied to clipboard!');
-              } catch {
-                // Final fallback
-                const textArea = document.createElement('textarea');
-                textArea.value = resultUrl;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                alert('Result link copied to clipboard!');
-              }
+          if (!shared) {
+            // Fallback to clipboard
+            try {
+              await navigator.clipboard.writeText(resultUrl);
+              alert('Result link copied to clipboard!');
+            } catch {
+              // Final fallback
+              const textArea = document.createElement('textarea');
+              textArea.value = resultUrl;
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              alert('Result link copied to clipboard!');
             }
           }
         }, 2000); // Wait for stats modal to show first
