@@ -246,6 +246,25 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
     challenge.read = true; // Also mark as read when completed
     await saveDB(db);
     
+    // ALSO ADD TO GLOBAL COMPLETIONS LIST for playback
+    const completerName = await getUsername(userId);
+    db.completions.push({
+      challengeId,
+      completerName,
+      completerId: userId,
+      solved: result?.solved || false,
+      guesses: result?.guesses || [],
+      solveTime: result?.solveTime || 0,
+      completedAt: Date.now(),
+      resultUrl: result?.resultUrl || '',
+      id: db.completions.length + 1
+    });
+    
+    if (db.challenges[challengeId]) {
+      db.challenges[challengeId].completedCount++;
+    }
+    await saveDB(db);
+    
     // Notify the sender by marking completion on their sent challenge
     // Find the sender's userId from the challenge
     if (db.sentChallenges[challenge.fromUserId]) {
@@ -259,7 +278,6 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
     }
     
     // Send WebSocket notification to sender
-    const completerName = await getUsername(userId);
     const db2 = await getDB();
     sendNotificationToUser(challenge.fromUserId, {
       kind: 'challenge-completed',
@@ -1129,15 +1147,22 @@ export default {
         const challengeId = pathParts[3];
         const data = await req.json();
         
+        console.log('[Backend] POST /api/challenge/:id/complete called');
+        console.log('[Backend] Challenge ID:', challengeId);
+        console.log('[Backend] Data received:', JSON.stringify(data, null, 2));
+        
         // Handle both formats: new (with completerName) and old (with userId)
         if (data.userId && data.result) {
           // Old format - mark as completed in user's inbox
+          console.log('[Backend] Using old format (markChallengeAsCompleted)');
           await markChallengeAsCompleted(challengeId, data.userId, data.result);
         } else {
           // New format - add to completions list
+          console.log('[Backend] Using new format (addCompletion)');
           await addCompletion({ ...data, challengeId });
         }
         
+        console.log('[Backend] Completion submitted successfully');
         return Response.json({ success: true }, { headers: corsHeaders });
       } catch (error) {
         console.error("Error submitting completion:", error);
