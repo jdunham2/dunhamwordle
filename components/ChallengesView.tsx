@@ -67,10 +67,11 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
         if (response.ok) {
           const sent: SentChallenge[] = await response.json();
           
-          // Load completion counts and details for each sent challenge
+          // Load completion counts and details for each deep challenge
           const withCompletions = await Promise.all(
             sent.map(async (c) => {
               const completionData = await getChallengeCompletions(c.challengeId);
+              console.log('[ChallengesView] Challenge', c.challengeId, 'has', completionData.length, 'completions:', completionData);
               return {
                 ...c,
                 completions: completionData.length,
@@ -79,6 +80,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
             })
           );
           
+          console.log('[ChallengesView] Loaded', withCompletions.length, 'sent challenges with completions');
           setSentChallenges(withCompletions);
           
           // Clear hasNewCompletion flags for sent challenges
