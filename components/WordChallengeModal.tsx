@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createWordChallenge, generateChallengeUrl, WordChallenge } from '../services/challengeService';
+import { createWordChallenge, generateChallengeUrl, WordChallenge, storeChallengeOnBackend } from '../services/challengeService';
 import { GameMode } from '../types';
 
 interface WordChallengeModalProps {
@@ -59,6 +59,10 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
 
     try {
       const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited, senderName.trim() || undefined);
+      
+      // Store challenge on backend
+      await storeChallengeOnBackend(challenge);
+      
       const url = generateChallengeUrl(challenge);
       setShareUrl(url);
 

@@ -13,7 +13,7 @@ import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { loadBadges, saveBadges, checkForNewBadges, calculateDayStreak } from './services/badgeService';
-import { extractChallengeFromUrl, extractResultFromUrl, WordChallenge, ChallengeResult, encodeChallengeResult, generateResultUrl } from './services/challengeService';
+import { extractChallengeFromUrl, extractResultFromUrl, WordChallenge, ChallengeResult, encodeChallengeResult, generateResultUrl, submitChallengeCompletion } from './services/challengeService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion, Badge } from './types';
 import './App.css';
 
@@ -452,6 +452,11 @@ function App() {
           createdAt: new Date()
         };
 
+        // Submit completion to backend
+        submitChallengeCompletion(currentChallenge, result, 'Player').catch(error => {
+          console.error('Failed to submit challenge completion:', error);
+        });
+
         const resultUrl = generateResultUrl(result);
         console.log('=== RESULT URL GENERATION ===');
         console.log('Result data:', result);
@@ -848,6 +853,18 @@ function App() {
     setShowMultiplayerLobby(true);
   };
 
+  const handleGoHome = () => {
+    // Close all modals and return to start screen
+    setShowHelp(false);
+    setShowStats(false);
+    setShowCalendar(false);
+    setShowWordChallenge(false);
+    setShowMultiplayerLobby(false);
+    setShowMultiplayerGame(false);
+    setShowPlaybackView(false);
+    setShowStartScreen(true);
+  };
+
   const handleRoomCreated = (roomId: string, isHost: boolean, playerName: string) => {
     setMultiplayerRoomId(roomId);
     setIsMultiplayerHost(isHost);
@@ -1025,6 +1042,9 @@ function App() {
       {!showPlaybackView && !showMultiplayerGame && (
         <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
         <div className="flex items-center gap-2">
+          <button onClick={() => { enableAudio(); handleGoHome(); }} aria-label="Home">
+             <Home className="h-5 w-5 text-gray-400 hover:text-white" />
+          </button>
           <button onClick={() => { enableAudio(); setShowHelp(true); }} aria-label="How to play">
              <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
@@ -1501,6 +1521,13 @@ const createIcon = (svg: React.ReactNode) => (props: React.SVGProps<SVGSVGElemen
     >
         {svg}
     </svg>
+);
+
+const Home = createIcon(
+    <>
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9,22 9,12 15,12 15,22" />
+    </>
 );
 
 const HelpCircle = createIcon(

@@ -1,4 +1,5 @@
 import { GameMode } from '../types';
+import { getWebSocketUrl } from './wsConfig';
 // import { notificationService } from './notificationService'; // Optional - uncomment after installing Firebase
 
 export interface WordChallenge {
@@ -169,6 +170,98 @@ export function extractResultFromUrl(): ChallengeResult | null {
   return null;
 }
 
+// Store a challenge on the backend
+export async function storeChallengeOnBackend(challenge: WordChallenge): Promise<boolean> {
+  try {
+    const wsUrl = getWebSocketUrl();
+    // Convert ws:// or wss:// to http:// or https://
+    const httpUrl = wsUrl.replace(/^ws/, 'http');
+    
+    const response = await fetch(`${httpUrl}/api/challenge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        challengeId: challenge.challengeId,
+        word: challenge.word,
+        creatorName: challenge.senderName || 'Anonymous',
+        creatorId: challenge.creatorId || generateChallengeId(),
+        createdAt: challenge.createdAt.getTime(),
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[Challenge] Failed to store challenge:', response.statusText);
+      return false;
+    }
+
+    console.log('[Challenge] Challenge stored successfully:', challenge.challengeId);
+    return true;
+  } catch (error) {
+    console.error('[Challenge] Error storing challenge:', error);
+    return false;
+  }
+}
+
+// Submit a challenge completion to the backend
+export async function submitChallengeCompletion(
+  challenge: WordChallenge,
+  result: ChallengeResult,
+  completerName: string
+): Promise<boolean> {
+  try {
+    const wsUrl = getWebSocketUrl();
+    const httpUrl = wsUrl.replace(/^ws/, 'http');
+    
+    const response = await fetch(`${httpUrl}/api/challenge/${challenge.challengeId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        completerName: completerName || 'Anonymous',
+        solved: result.solved,
+        guesses: result.guesses,
+        solveTime: result.solveTime,
+        completedAt: Date.now(),
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[Challenge] Failed to submit completion:', response.statusText);
+      return false;
+    }
+
+    console.log('[Challenge] Completion submitted successfully');
+    return true;
+  } catch (error) {
+    console.error('[Challenge] Error submitting completion:', error);
+    return false;
+  }
+}
+
+// Get completions for a challenge
+export async function getChallengeCompletions(challengeId: string): Promise<any[]> {
+  try {
+    const wsUrl = getWebSocketUrl();
+    const httpUrl = wsUrl.replace(/^ws/, 'http');
+    
+    const response = await fetch(`${httpUrl}/api/challenge/${challengeId}/completions`);
+    
+    if (!response.ok) {
+      console.error('[Challenge] Failed to get completions:', response.statusText);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.completions || [];
+  } catch (error) {
+    console.error('[Challenge] Error getting completions:', error);
+    return [];
+  }
+}
+
 // Notify challenge creator when someone completes their challenge
 export async function notifyChallengeCompletion(
   challenge: WordChallenge,
@@ -181,16 +274,8 @@ export async function notifyChallengeCompletion(
     return false;
   }
 
-  // TODO: Enable when Firebase is installed (npm install firebase)
-  // const { notificationService } = await import('./notificationService');
-  // if (!notificationService.isEnabled()) {
-  //   console.log('[Challenge] Notifications not enabled');
-  //   return false;
-  // }
-  // await notificationService.notifyChallengeComplete({...});
-  
-  console.log('[Challenge] Notifications not configured yet - install Firebase to enable');
-  return false;
+  // Submit completion to backend (which will notify the creator)
+  return await submitChallengeCompletion(challenge, result, completerName);
 }
 
 // Initialize notifications for the current user
