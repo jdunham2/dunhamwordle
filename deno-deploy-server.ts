@@ -631,6 +631,10 @@ export default {
         await updateUserLastSeen(userId);
         const user = await getUser(userId);
         if (user) {
+          // Ensure dailyCompletions exists
+          if (!user.dailyCompletions) {
+            user.dailyCompletions = {};
+          }
           return Response.json(user, { headers: corsHeaders });
         } else {
           return Response.json(
