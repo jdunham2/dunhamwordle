@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "start": "node websocket-server.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.4",

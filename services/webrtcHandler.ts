@@ -20,14 +20,31 @@ export class WebRTCHandler {
   private remoteStream: MediaStream | null = null;
 
   constructor() {
+    // TURN credentials from environment or defaults
+    const turnUsername = import.meta.env.VITE_TURN_USERNAME || '000000002076975744';
+    const turnPassword = import.meta.env.VITE_TURN_PASSWORD || 'rOnkKAOHY+v33zFalCzbKCxe3as=';
+    const turnServer = import.meta.env.VITE_TURN_SERVER || 'relay1.expressturn.com:3478';
+
     // Enhanced STUN/TURN servers for better NAT traversal
     const iceServers = [
+      // Google STUN servers (free, public)
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' }
+      
+      // ExpressTURN servers (for NAT traversal)
+      {
+        urls: `turn:${turnServer}`,
+        username: turnUsername,
+        credential: turnPassword
+      },
+      {
+        urls: `turns:${turnServer}`,
+        username: turnUsername,
+        credential: turnPassword
+      }
     ];
+
+    console.log('[WebRTC] Initializing with TURN server:', turnServer);
 
     this.peerConnection = new RTCPeerConnection({ 
       iceServers,

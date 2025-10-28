@@ -1,4 +1,5 @@
 import { GameMode } from '../types';
+// import { notificationService } from './notificationService'; // Optional - uncomment after installing Firebase
 
 export interface WordChallenge {
   word: string;
@@ -7,6 +8,7 @@ export interface WordChallenge {
   createdAt: Date;
   challengeId: string;
   senderName?: string;
+  creatorId?: string; // For notifications
 }
 
 export interface ChallengeResult {
@@ -165,4 +167,39 @@ export function extractResultFromUrl(): ChallengeResult | null {
   }
 
   return null;
+}
+
+// Notify challenge creator when someone completes their challenge
+export async function notifyChallengeCompletion(
+  challenge: WordChallenge,
+  result: ChallengeResult,
+  completerName: string,
+  completerId: string
+): Promise<boolean> {
+  if (!challenge.creatorId) {
+    console.log('[Challenge] No creator ID, skipping notification');
+    return false;
+  }
+
+  // TODO: Enable when Firebase is installed (npm install firebase)
+  // const { notificationService } = await import('./notificationService');
+  // if (!notificationService.isEnabled()) {
+  //   console.log('[Challenge] Notifications not enabled');
+  //   return false;
+  // }
+  // await notificationService.notifyChallengeComplete({...});
+  
+  console.log('[Challenge] Notifications not configured yet - install Firebase to enable');
+  return false;
+}
+
+// Initialize notifications for the current user
+export function initializeChallengeNotifications(userId: string): () => void {
+  // TODO: Enable when Firebase is installed (npm install firebase)
+  // const { notificationService } = await import('./notificationService');
+  // if (!notificationService.isEnabled()) return () => {};
+  // return notificationService.listenForNotifications(userId, callback);
+  
+  console.log('[Challenge] Notifications not configured yet - install Firebase to enable');
+  return () => {};
 }
