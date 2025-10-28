@@ -266,8 +266,26 @@ export async function markChallengeAsCompleted(challengeId: string, userId: stri
 // Get count of unread challenges (exclude completed ones)
 export async function getUnreadChallengeCount(userId: string): Promise<number> {
   try {
+    const wsUrl = getWebSocketUrl();
+    const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+    
+    // Get unread received challenges
     const challenges = await getUserChallenges(userId);
-    return challenges.filter((c: any) => !c.read && !c.completed).length;
+    const unreadReceived = challenges.filter((c: any) => !c.read && !c.completed).length;
+    
+    // Get sent challenges with new completions
+    try {
+      const sentResponse = await fetch(`${httpUrl}/api/user/${userId}/sent-challenges`);
+      if (sentResponse.ok) {
+        const sentChallenges = await sentResponse.json();
+        const newCompletions = sentChallenges.filter((c: any) => c.hasNewCompletion).length;
+        return unreadReceived + newCompletions;
+      }
+    } catch (error) {
+      console.error('[User] Error getting sent challenges for count:', error);
+    }
+    
+    return unreadReceived;
   } catch (error) {
     console.error('[User] Error getting unread count:', error);
     return 0;

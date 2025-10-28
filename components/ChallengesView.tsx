@@ -31,6 +31,8 @@ interface SentChallenge {
   toAvatar: string;
   word: string;
   sentAt: number;
+  hasNewCompletion?: boolean;
+  lastCompletionAt?: number;
   completions?: Array<{
     completerName: string;
     solved: boolean;
@@ -78,6 +80,19 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
           );
           
           setSentChallenges(withCompletions);
+          
+          // Clear hasNewCompletion flags for sent challenges
+          const wsUrl = getWebSocketUrl();
+          const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+          sent.forEach(async (c) => {
+            if (c.hasNewCompletion) {
+              await fetch(`${httpUrl}/api/user/${user.userId}/sent-challenges/${c.challengeId}/read`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ challengeId: c.challengeId }),
+              });
+            }
+          });
         }
       } catch (error) {
         console.error('[ChallengesView] Failed to load sent challenges:', error);
@@ -182,6 +197,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
   };
 
   const unreadCount = receivedChallenges.filter(c => !c.read && !c.completed).length;
+  const newCompletionsCount = sentChallenges.filter(c => c.hasNewCompletion).length;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -230,7 +246,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
               }`}
             >
               <Trophy className="h-5 w-5" />
-              Sent
+              Sent {newCompletionsCount > 0 && <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">{newCompletionsCount}</span>}
             </button>
           </div>
         </div>
@@ -312,7 +328,10 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                         <div className="flex items-center gap-3 mb-2">
                           <div className="text-3xl">{challenge.toAvatar}</div>
                           <div>
-                            <div className="font-semibold">Sent to {challenge.toUsername}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="font-semibold">Sent to {challenge.toUsername}</div>
+                              {challenge.hasNewCompletion && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
+                            </div>
                             <div className="text-xl font-bold text-green-400">{challenge.word}</div>
                           </div>
                         </div>

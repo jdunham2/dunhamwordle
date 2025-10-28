@@ -242,6 +242,18 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
     challenge.read = true; // Also mark as read when completed
     await saveDB(db);
     
+    // Notify the sender by marking completion on their sent challenge
+    // Find the sender's userId from the challenge
+    if (db.sentChallenges[challenge.fromUserId]) {
+      const sentChallenge = db.sentChallenges[challenge.fromUserId].find((c: any) => c.challengeId === challengeId);
+      if (sentChallenge) {
+        // Mark that this completion happened "since last seen"
+        sentChallenge.hasNewCompletion = true;
+        sentChallenge.lastCompletionAt = Date.now();
+        await saveDB(db);
+      }
+    }
+    
     // Send WebSocket notification to sender
     const completerName = await getUsername(userId);
     const db2 = await getDB();
@@ -869,6 +881,32 @@ export default {
         return Response.json(sentChallenges, { headers: corsHeaders });
       } catch (error) {
         console.error("Error getting sent challenges:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/:userId/sent-challenges/:challengeId/read - Mark sent challenge as read
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/sent-challenges\/[^\/]+\/read$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const challengeId = pathParts[5];
+        const db = await getDB();
+        
+        if (db.sentChallenges[userId]) {
+          const sentChallenge = db.sentChallenges[userId].find((c: any) => c.challengeId === challengeId);
+          if (sentChallenge) {
+            sentChallenge.hasNewCompletion = false;
+            await saveDB(db);
+          }
+        }
+        
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error marking sent challenge as read:", error);
         return Response.json(
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }
