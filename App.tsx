@@ -18,6 +18,7 @@ import { loadWordLists } from './services/wordService';
 import { loadBadges, saveBadges, checkForNewBadges, calculateDayStreak } from './services/badgeService';
 import { extractChallengeFromUrl, extractResultFromUrl, WordChallenge, ChallengeResult, encodeChallengeResult, generateResultUrl, submitChallengeCompletion } from './services/challengeService';
 import { getCurrentUser, setCurrentUser as saveCurrentUser, clearCurrentUser, getUnreadChallengeCount, subscribeToPushNotifications, User, markChallengeAsCompleted } from './services/userService';
+import { getWebSocketUrl } from './services/wsConfig';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion, Badge } from './types';
 import './App.css';
 
@@ -455,15 +456,35 @@ function App() {
   // Save stats when they change
   useEffect(() => {
     if (currentUser) {
-      // Save to user-specific storage
+      // Save to user-specific storage (localStorage backup)
       saveUserStats(currentUser.userId, state.stats);
       saveUserDailyCompletions(currentUser.userId, state.wordOfTheDayCompletions);
+      
+      // Sync daily completions to backend
+      syncDailyCompletionsToBackend(currentUser.userId, state.wordOfTheDayCompletions);
     } else {
       // Fallback to global storage for non-logged-in users
       saveStats(state.stats);
       saveWordOfTheDayCompletions(state.wordOfTheDayCompletions);
     }
   }, [state.stats, state.wordOfTheDayCompletions, currentUser]);
+  
+  // Sync daily completions to backend
+  const syncDailyCompletionsToBackend = async (userId: string, completions: WordOfTheDayCompletion) => {
+    try {
+      const wsUrl = getWebSocketUrl();
+      const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+      
+      await fetch(`${httpUrl}/api/user/${userId}/daily`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(completions),
+      });
+    } catch (error) {
+      console.error('[App] Failed to sync daily completions:', error);
+      // Don't show error to user - localStorage backup exists
+    }
+  };
 
   // Save badges when they change
   useEffect(() => {
@@ -658,9 +679,17 @@ function App() {
       setCurrentUser(user);
       loadUnreadCount(user.userId);
       
-      // Load user-specific stats
+      // Load user-specific stats from localStorage (backup)
       const userStats = loadUserStats(user.userId);
-      const userDaily = loadUserDailyCompletions(user.userId);
+      let userDaily = loadUserDailyCompletions(user.userId);
+      
+      // Try to load daily completions from backend (authoritative source)
+      if (user.dailyCompletions) {
+        userDaily = user.dailyCompletions;
+        // Save to localStorage as backup
+        saveUserDailyCompletions(user.userId, userDaily);
+      }
+      
       dispatch({ 
         type: 'LOAD_STATS', 
         payload: { 
@@ -694,14 +723,21 @@ function App() {
   }, [currentUser]);
 
   // Handle user authentication
-  const handleUserAuthenticated = (user: User) => {
+  const handleUserAuthenticated = async (user: User) => {
     setCurrentUser(user);
     saveCurrentUser(user);
     loadUnreadCount(user.userId);
     
-    // Load user-specific stats and daily completions
+    // Load user-specific stats from localStorage (backup)
     const userStats = loadUserStats(user.userId);
-    const userDaily = loadUserDailyCompletions(user.userId);
+    let userDaily = loadUserDailyCompletions(user.userId);
+    
+    // Try to load daily completions from backend (authoritative source)
+    if (user.dailyCompletions) {
+      userDaily = user.dailyCompletions;
+      // Save to localStorage as backup
+      saveUserDailyCompletions(user.userId, userDaily);
+    }
     
     // Update state with user-specific data
     dispatch({ 

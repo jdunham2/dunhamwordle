@@ -98,6 +98,8 @@ async function createUser(username: string, avatar: string) {
     avatar,
     createdAt: Date.now(),
     lastSeen: Date.now(),
+    dailyCompletions: {}, // Store Word of the Day completions
+    stats: {} // Store user stats (optional, for future use)
   };
   db.users[userId] = user;
   await saveDB(db);
@@ -636,6 +638,33 @@ export default {
         }
       } catch (error) {
         console.error("Error logging in user:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/:userId/daily - Update daily completions
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/daily$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const dailyCompletions = await req.json();
+        
+        const db = await getDB();
+        if (db.users[userId]) {
+          db.users[userId].dailyCompletions = dailyCompletions;
+          await saveDB(db);
+          return Response.json({ success: true }, { headers: corsHeaders });
+        } else {
+          return Response.json(
+            { success: false, error: "User not found" },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } catch (error) {
+        console.error("Error updating daily completions:", error);
         return Response.json(
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }

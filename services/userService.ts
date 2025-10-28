@@ -6,6 +6,8 @@ export interface User {
   avatar: string;
   createdAt: number;
   lastSeen: number;
+  dailyCompletions?: any; // Word of the Day completions object
+  stats?: any; // User stats (optional, for future use)
 }
 
 export interface UserStats {
