@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createWordChallenge, generateChallengeUrl, WordChallenge, storeChallengeOnBackend } from '../services/challengeService';
+import { createWordChallenge, generateChallengeUrl, WordChallenge, storeChallengeOnBackend, saveMyChallenge } from '../services/challengeService';
 import { GameMode } from '../types';
 
 interface WordChallengeModalProps {
@@ -19,16 +19,26 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
 }) => {
   const [customWord, setCustomWord] = useState('');
   const [senderName, setSenderName] = useState('');
+  const [sentToName, setSentToName] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [hasShared, setHasShared] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus the input when modal opens
+  // Focus the input when modal opens and reset state when closed
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
+    }
+    if (!isOpen) {
+      // Reset form when modal closes
+      setCustomWord('');
+      setSenderName('');
+      setSentToName('');
+      setHasShared(false);
+      setShareUrl(null);
+      setCopyStatus('idle');
     }
   }, [isOpen]);
 
@@ -62,6 +72,15 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
       
       // Store challenge on backend
       await storeChallengeOnBackend(challenge);
+      
+      // Save to localStorage with "sent to" tracking
+      saveMyChallenge(
+        challenge.challengeId,
+        challenge.word,
+        senderName.trim() || 'Me',
+        sentToName.trim() || 'Friend',
+        challenge.createdAt.getTime()
+      );
       
       const url = generateChallengeUrl(challenge);
       setShareUrl(url);
@@ -120,7 +139,7 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
         {!hasShared ? (
           <>
             <h2 className="text-2xl font-bold text-gray-100 mb-1 text-center">
-              Play with Friends
+              Send Challenge
             </h2>
             <p className="text-center text-gray-400 mb-4">Create a custom word and share it!</p>
 
@@ -138,6 +157,21 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
                   maxLength={20}
                   className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-100 text-center"
                   placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Send to (optional):
+                </label>
+                <input
+                  type="text"
+                  value={sentToName}
+                  onChange={(e) => setSentToName(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  maxLength={20}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-100 text-center"
+                  placeholder="Friend's name"
                 />
               </div>
               <div>
@@ -160,9 +194,9 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
               <div className="text-sm text-gray-300 bg-gray-700 p-3 rounded">
                 <p className="font-medium mb-1">How it works:</p>
                 <ul className="text-xs space-y-1 text-gray-300">
-                  <li>• Tap "Share Challenge Link" to open your phone’s share dialog</li>
-                  <li>• Send it anywhere (Messages, Messenger, etc.)</li>
-                  <li>• After sharing, you’re done — just close this window</li>
+                  <li>• Enter your word and tap "Send Challenge"</li>
+                  <li>• Share it with your friend through Messages, etc.</li>
+                  <li>• See their completion in "Sent Challenges"</li>
                 </ul>
               </div>
             </div>
@@ -173,7 +207,7 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
                 disabled={customWord.length !== 5 || isValidating}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded"
               >
-                {isValidating ? 'Creating…' : 'Share Challenge Link'}
+                {isValidating ? 'Creating…' : 'Send Challenge'}
               </button>
             </div>
 
@@ -225,28 +259,12 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  if (shareUrl) {
-                    shareNative(
-                      shareUrl,
-                      'Dunham Wordle — Play with Friends',
-                      `I made you a Play with Friends challenge in Dunham Wordle! Tap to play and then send me your results.`
-                    );
-                  }
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Share Again
-              </button>
-              <button
-                onClick={onClose}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Done
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Done
+            </button>
           </>
         )}
       </div>

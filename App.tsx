@@ -1115,7 +1115,7 @@ function App() {
         }} aria-label="Create word challenge">
              <Share2 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="My Challenges">
+          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="Sent Challenges">
              <Trophy className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
           {isMobile && (
@@ -1568,7 +1568,7 @@ function App() {
                 A share dialog will open where you can send your results.
               </p>
               <p className="text-xs text-blue-400">
-                {pendingResultShare.creatorName} can see your completion in their "My Challenges" page
+                {pendingResultShare.creatorName} can see your completion in their "Sent Challenges" page
               </p>
             </div>
 

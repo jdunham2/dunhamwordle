@@ -194,10 +194,10 @@ export function extractResultFromUrl(): ChallengeResult | null {
 const MY_CHALLENGES_KEY = 'dunhamwordle_my_challenges';
 
 // Store a challenge ID in localStorage
-export function saveMyChallenge(challengeId: string, word: string, senderName: string, createdAt: number): void {
+export function saveMyChallenge(challengeId: string, word: string, senderName: string, sentToName: string, createdAt: number): void {
   try {
     const challenges = getMyChallenges();
-    challenges.push({ challengeId, word, senderName, createdAt });
+    challenges.push({ challengeId, word, senderName, sentToName, createdAt });
     localStorage.setItem(MY_CHALLENGES_KEY, JSON.stringify(challenges));
   } catch (error) {
     console.error('[Challenge] Error saving to localStorage:', error);
@@ -205,7 +205,7 @@ export function saveMyChallenge(challengeId: string, word: string, senderName: s
 }
 
 // Get all my created challenges from localStorage
-export function getMyChallenges(): Array<{ challengeId: string; word: string; senderName: string; createdAt: number }> {
+export function getMyChallenges(): Array<{ challengeId: string; word: string; senderName: string; sentToName: string; createdAt: number }> {
   try {
     const stored = localStorage.getItem(MY_CHALLENGES_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -243,13 +243,7 @@ export async function storeChallengeOnBackend(challenge: WordChallenge): Promise
 
     console.log('[Challenge] Challenge stored successfully:', challenge.challengeId);
     
-    // Save to localStorage for "My Challenges" tracking
-    saveMyChallenge(
-      challenge.challengeId,
-      challenge.word,
-      challenge.senderName || 'Me',
-      challenge.createdAt.getTime()
-    );
+    // Note: saveMyChallenge will be called from the modal with sentToName
     
     return true;
   } catch (error) {

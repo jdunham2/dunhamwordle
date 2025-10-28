@@ -51,7 +51,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
             className="w-full px-6 py-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-3"
           >
             <Users className="h-6 w-6" />
-            Play with Friends
+            Send Challenge
           </button>
 
           <button
@@ -59,7 +59,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
             className="w-full px-6 py-4 bg-yellow-600 text-white rounded-lg font-bold text-lg hover:bg-yellow-700 transition-colors flex items-center justify-center gap-3"
           >
             <Trophy className="h-6 w-6" />
-            My Challenges
+            Sent Challenges
           </button>
 
           <button

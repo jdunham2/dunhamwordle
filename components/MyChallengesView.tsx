@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMyChallenges, getChallengeCompletions, generateChallengeUrl } from '../services/challengeService';
+import { getMyChallenges, getChallengeCompletions, generateResultUrl } from '../services/challengeService';
 
 interface MyChallengesViewProps {
   onClose: () => void;
@@ -9,6 +9,7 @@ interface ChallengeWithCompletions {
   challengeId: string;
   word: string;
   senderName: string;
+  sentToName: string;
   createdAt: number;
   completions: number;
   completionDetails: any[];
@@ -46,34 +47,6 @@ export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) =
     setLoading(false);
   };
 
-  const handleShare = async (challenge: ChallengeWithCompletions) => {
-    const url = generateChallengeUrl({
-      word: challenge.word,
-      guesses: [],
-      gameMode: 'unlimited',
-      createdAt: new Date(challenge.createdAt),
-      challengeId: challenge.challengeId,
-      senderName: challenge.senderName,
-    });
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Challenge from ${challenge.senderName} - Dunham Wordle`,
-          text: `Can you solve my Wordle challenge? Word: ${challenge.word}`,
-          url: url,
-        });
-      } catch (err) {
-        // User cancelled or error occurred
-        console.log('Share cancelled or failed:', err);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(url);
-      alert('Challenge link copied to clipboard!');
-    }
-  };
-
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { 
@@ -89,7 +62,7 @@ export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) =
       <div className="bg-zinc-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
-          <h2 className="text-2xl font-bold">My Challenges</h2>
+          <h2 className="text-2xl font-bold">Sent Challenges</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-2xl"
@@ -127,14 +100,11 @@ export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) =
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400">Created {formatDate(challenge.createdAt)}</p>
+                      <p className="text-sm text-gray-400">
+                        Sent to <span className="font-semibold">{challenge.sentToName}</span>
+                      </p>
+                      <p className="text-xs text-gray-500">Created {formatDate(challenge.createdAt)}</p>
                     </div>
-                    <button
-                      onClick={() => handleShare(challenge)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      Share Again
-                    </button>
                   </div>
 
                   {/* Completions Section */}
@@ -151,28 +121,41 @@ export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) =
                       
                       {selectedChallenge?.challengeId === challenge.challengeId && (
                         <div className="mt-2 space-y-2">
-                          {challenge.completionDetails.map((completion: any, idx: number) => (
-                            <div key={idx} className="bg-zinc-800 rounded p-3 text-sm">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-gray-300">
-                                  {completion.completerName || 'Anonymous'}
-                                </span>
-                                <span className={completion.solved ? 'text-green-400' : 'text-red-400'}>
-                                  {completion.solved ? '✓ Solved' : '✗ Failed'}
-                                </span>
+                          {challenge.completionDetails.map((completion: any, idx: number) => {
+                            const resultUrl = completion.result ? generateResultUrl(completion.result) : null;
+                            return (
+                              <div key={idx} className="bg-zinc-800 rounded p-3 text-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-semibold text-gray-300">
+                                    {completion.completerName || 'Anonymous'}
+                                  </span>
+                                  <span className={completion.solved ? 'text-green-400' : 'text-red-400'}>
+                                    {completion.solved ? '✓ Solved' : '✗ Failed'}
+                                  </span>
+                                </div>
+                                <div className="text-gray-400 mb-2">
+                                  {completion.attempts} {completion.attempts === 1 ? 'attempt' : 'attempts'} · {
+                                    new Date(completion.completedAt).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric', 
+                                      hour: 'numeric', 
+                                      minute: '2-digit' 
+                                    })
+                                  }
+                                </div>
+                                {resultUrl && (
+                                  <a 
+                                    href={resultUrl}
+                                    className="text-blue-400 hover:text-blue-300 text-xs underline"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View Replay →
+                                  </a>
+                                )}
                               </div>
-                              <div className="text-gray-400">
-                                {completion.attempts} {completion.attempts === 1 ? 'attempt' : 'attempts'} · {
-                                  new Date(completion.completedAt).toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric', 
-                                    hour: 'numeric', 
-                                    minute: '2-digit' 
-                                  })
-                                }
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
