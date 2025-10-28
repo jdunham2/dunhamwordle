@@ -39,7 +39,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
             {user && onAccountMenu && (
               <button
                 onClick={onAccountMenu}
-                className="text-4xl hover:scale-110 transition-transform"
+                className="text-3xl hover:scale-110 transition-transform bg-zinc-600 hover:bg-zinc-500 rounded-full p-2 flex items-center justify-center w-12 h-12"
                 aria-label="Account menu"
               >
                 {user.avatar}
