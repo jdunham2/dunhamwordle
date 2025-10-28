@@ -69,19 +69,27 @@ export function clearCurrentUser(): void {
 }
 
 // Check if username is available
-export async function checkUsernameAvailable(username: string): Promise<boolean> {
+export async function checkUsernameAvailable(username: string): Promise<boolean | null> {
   try {
     const wsUrl = getWebSocketUrl();
     const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
     
     const response = await fetch(`${httpUrl}/api/user/check/${encodeURIComponent(username)}`);
+    
+    // If backend is unavailable (500 error), return null to indicate unknown state
+    if (response.status >= 500) {
+      console.error('[User] Backend unavailable (500 error)');
+      return null;
+    }
+    
     if (!response.ok) return false;
     
     const data = await response.json();
     return data.available;
   } catch (error) {
     console.error('[User] Error checking username:', error);
-    return false;
+    // Return null to indicate backend is unreachable
+    return null;
   }
 }
 

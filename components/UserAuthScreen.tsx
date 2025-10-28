@@ -74,20 +74,30 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
 
     setCreating(true);
     
-    // Check if username is available
-    const available = await checkUsernameAvailable(searchTerm);
-    if (!available) {
-      alert('Username is already taken. Please try another.');
-      setCreating(false);
-      return;
-    }
+    try {
+      // Check if username is available
+      const available = await checkUsernameAvailable(searchTerm);
+      
+      // If backend is unavailable, allow creation anyway
+      if (available === null) {
+        console.warn('[UserAuth] Backend unavailable, allowing user creation');
+      } else if (!available) {
+        alert('Username is already taken. Please try another.');
+        setCreating(false);
+        return;
+      }
 
-    // Create new user
-    const newUser = await createUser(searchTerm.trim(), selectedAvatar);
-    if (newUser) {
-      onAuthenticated(newUser);
-    } else {
-      alert('Failed to create account. Please try again.');
+      // Create new user
+      const newUser = await createUser(searchTerm.trim(), selectedAvatar);
+      if (newUser) {
+        onAuthenticated(newUser);
+      } else {
+        alert('Failed to create account. Backend may be unavailable. Please refresh and try again.');
+        setCreating(false);
+      }
+    } catch (error) {
+      console.error('[UserAuth] Error creating user:', error);
+      alert('Failed to create account. Backend may be unavailable. Please refresh and try again.');
       setCreating(false);
     }
   };
