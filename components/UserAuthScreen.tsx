@@ -268,7 +268,7 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
             </div>
           ) : (
             /* User Grid */
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[50vh] overflow-y-auto pr-2">
               {filteredUsers.map((user) => {
                 const isSelected = selectedUsers.has(user.userId);
                 return (

@@ -392,8 +392,6 @@ function App() {
   const [multiplayerRoomId, setMultiplayerRoomId] = useState('');
   const [isMultiplayerHost, setIsMultiplayerHost] = useState(false);
   const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
-  const [showResultShareConfirm, setShowResultShareConfirm] = useState(false);
-  const [pendingResultShare, setPendingResultShare] = useState<{url: string, message: string, creatorName?: string} | null>(null);
   const [showChallenges, setShowChallenges] = useState(false);
   
   // User account states
@@ -554,19 +552,6 @@ function App() {
         console.log('Result data:', result);
         console.log('Generated URL:', resultUrl);
         console.log('=============================');
-
-        // Show confirmation modal before sharing
-        const guessCount = result.guesses.filter(guess => guess.trim() !== '').length;
-        const message = `I just ${isWin ? 'solved' : 'played'} your Play with Friends challenge in Dunham Wordle in ${guessCount} guesses!`;
-        
-        setTimeout(() => {
-          setPendingResultShare({
-            url: resultUrl,
-            message,
-            creatorName: currentChallenge.senderName || 'Friend'
-          });
-          setShowResultShareConfirm(true);
-        }, 2000); // Wait for stats modal to show first
 
         // Clear the challenge
         setCurrentChallenge(null);
@@ -1029,7 +1014,6 @@ function App() {
     setShowMultiplayerLobby(false);
     setShowMultiplayerGame(false);
     setShowPlaybackView(false);
-    setShowResultShareConfirm(false);
     setShowChallenges(false);
     setShowStartScreen(true);
   };
@@ -1046,41 +1030,6 @@ function App() {
     setShowChallenges(true);
   };
 
-  const handleShareResult = async () => {
-    if (!pendingResultShare) return;
-    
-    setShowResultShareConfirm(false);
-    
-    const shared = await shareNative(
-      pendingResultShare.url,
-      `My Result - Dunham Wordle`,
-      pendingResultShare.message
-    );
-
-    if (!shared) {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(pendingResultShare.url);
-        alert('Result link copied to clipboard! Share it with ' + (pendingResultShare.creatorName || 'your friend'));
-      } catch {
-        // Final fallback
-        const textArea = document.createElement('textarea');
-        textArea.value = pendingResultShare.url;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('Result link copied to clipboard! Share it with ' + (pendingResultShare.creatorName || 'your friend'));
-      }
-    }
-    
-    setPendingResultShare(null);
-  };
-
-  const handleSkipResultShare = () => {
-    setShowResultShareConfirm(false);
-    setPendingResultShare(null);
-  };
 
   const handleRoomCreated = (roomId: string, isHost: boolean, playerName: string) => {
     setMultiplayerRoomId(roomId);
