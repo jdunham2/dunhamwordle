@@ -5,18 +5,18 @@ interface StartScreenProps {
   onStartUnlimited: () => void;
   onStartWordOfTheDay: () => void;
   onShowStats: () => void;
-  onPlayWithFriends: () => void;
+  onChallenges: () => void;
   onMultiplayer: () => void;
-  onMyChallenges: () => void;
+  onSwitchUser?: () => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
   onStartUnlimited,
   onStartWordOfTheDay,
   onShowStats,
-  onPlayWithFriends,
+  onChallenges,
   onMultiplayer,
-  onMyChallenges
+  onSwitchUser
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -47,19 +47,11 @@ export const StartScreen: React.FC<StartScreenProps> = ({
           </button>
 
           <button
-            onClick={onPlayWithFriends}
+            onClick={onChallenges}
             className="w-full px-6 py-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-3"
           >
-            <Users className="h-6 w-6" />
-            Send Challenge
-          </button>
-
-          <button
-            onClick={onMyChallenges}
-            className="w-full px-6 py-4 bg-yellow-600 text-white rounded-lg font-bold text-lg hover:bg-yellow-700 transition-colors flex items-center justify-center gap-3"
-          >
             <Trophy className="h-6 w-6" />
-            Sent Challenges
+            Challenges
           </button>
 
           <button
@@ -82,6 +74,15 @@ export const StartScreen: React.FC<StartScreenProps> = ({
         <div className="mt-8 text-sm text-gray-400">
           <p>Family-friendly Wordle with boosts and no ads</p>
         </div>
+
+        {onSwitchUser && (
+          <button
+            onClick={onSwitchUser}
+            className="mt-4 text-gray-400 hover:text-white text-sm underline"
+          >
+            Switch User
+          </button>
+        )}
       </div>
     </div>
   );

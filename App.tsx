@@ -1034,6 +1034,13 @@ function App() {
     setShowStartScreen(true);
   };
 
+  const handleSwitchUser = () => {
+    // Logout current user and return to auth screen
+    clearCurrentUser();
+    setCurrentUser(null);
+    setShowStartScreen(false);
+  };
+
   const handleMyChallenges = () => {
     setShowStartScreen(false);
     setShowChallenges(true);
@@ -1255,46 +1262,10 @@ function App() {
           <button onClick={() => { enableAudio(); handleGoHome(); }} aria-label="Home">
              <Home className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-          <button onClick={() => { enableAudio(); setShowHelp(true); }} aria-label="How to play">
-             <HelpCircle className="h-5 w-5 text-gray-400 hover:text-white" />
-          </button>
-           <button onClick={() => { enableAudio(); setShowStats(true); }} aria-label="View statistics">
-             <BarChart4 className="h-5 w-5 text-gray-400 hover:text-white" />
-          </button>
-        <button onClick={async () => {
-          enableAudio();
-          // Ensure word lists are loaded before opening modal
-          if (!wordLists.current) {
-            try {
-              wordLists.current = await loadWordLists();
-              setWordListsState(wordLists.current);
-            } catch (e) {
-              console.error('Failed to load word lists:', e);
-              alert('Failed to load word lists. Please try again.');
-              return;
-            }
-          } else {
-            setWordListsState(wordLists.current);
-          }
-          setShowWordChallenge(true);
-        }} aria-label="Create word challenge">
-             <Share2 className="h-5 w-5 text-gray-400 hover:text-white" />
-          </button>
-          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="Challenges">
-             <Trophy className="h-5 w-5 text-gray-400 hover:text-white" />
-          </button>
-          {isMobile && (
-            <button onClick={handleDownload} aria-label="Install app">
-              <Download className="h-5 w-5 text-gray-400 hover:text-white" />
-            </button>
-          )}
         </div>
         <h1 className="text-xl sm:text-2xl md:text-4xl font-bold tracking-wider">WORDLE</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => { enableAudio(); handleWordOfTheDayClick(); }} aria-label="Word of the Day">
-            <Calendar className="h-5 w-5 text-gray-400 hover:text-white" />
-          </button>
-          <button onClick={() => { enableAudio(); dispatch({ type: 'NEW_GAME' }); }} aria-label="New Game">
+          <button onClick={() => { enableAudio(); dispatch({ type: 'NEW_GAME' }); }} aria-label="Redo">
              <RefreshCw className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
         </div>
@@ -1525,8 +1496,9 @@ function App() {
           onStartUnlimited={handleStartUnlimited}
           onStartWordOfTheDay={handleStartWordOfTheDay}
           onShowStats={handleShowStats}
-          onPlayWithFriends={handlePlayWithFriends}
+          onChallenges={handleMyChallenges}
           onMultiplayer={handleMultiplayer}
+          onSwitchUser={handleSwitchUser}
         />
       )}
 
@@ -1886,6 +1858,14 @@ const Trophy = createIcon(
         <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
         <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
         <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </>
+);
+
+const LogOut = createIcon(
+    <>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16,17 21,12 16,7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
     </>
 );
 
