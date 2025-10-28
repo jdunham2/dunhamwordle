@@ -17,13 +17,29 @@ const kv = await Deno.openKv();
 // Get database
 async function getDB() {
   const result = await kv.get(["wordle_db"]);
-  return result.value || { 
+  const defaultDB = { 
     rooms: {}, 
     challenges: {}, 
     completions: [],
     users: {},
     userChallenges: {}, // userId -> array of received challenges
     pushSubscriptions: {} // userId -> push subscription
+  };
+  
+  // If no database exists, return default
+  if (!result.value) {
+    return defaultDB;
+  }
+  
+  // Merge with default to ensure all keys exist
+  const db = result.value as any;
+  return {
+    rooms: db.rooms || {},
+    challenges: db.challenges || {},
+    completions: db.completions || [],
+    users: db.users || {},
+    userChallenges: db.userChallenges || {},
+    pushSubscriptions: db.pushSubscriptions || {}
   };
 }
 
@@ -95,6 +111,10 @@ async function getUser(userId: string) {
 
 async function getUserByUsername(username: string) {
   const db = await getDB();
+  // Ensure users object exists
+  if (!db.users || typeof db.users !== 'object') {
+    return null;
+  }
   return Object.values(db.users).find((u: any) => 
     u.username.toLowerCase() === username.toLowerCase()
   );
@@ -102,6 +122,11 @@ async function getUserByUsername(username: string) {
 
 async function getAllUsers() {
   const db = await getDB();
+  // Ensure users object exists
+  if (!db.users || typeof db.users !== 'object') {
+    db.users = {};
+    await saveDB(db);
+  }
   return Object.values(db.users);
 }
 
