@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dunham Wordle</title>
+  <script>
+    // GitHub Pages client-side routing
+    // Redirects /challenge and /result to index.html while preserving query params
+    const path = window.location.pathname;
+    const search = window.location.search;
+    
+    if (path !== '/' && path !== '/index.html') {
+      // Redirect to root with original query params
+      window.location.replace('/' + search);
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
+

@@ -135,21 +135,26 @@ export function createWordChallenge(word: string, gameMode: GameMode = GameMode.
 }
 
 // Generate shareable URL for a challenge
-export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.href.split('?')[0]): string {
+export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.origin): string {
   const encoded = encodeWordChallenge(challenge);
-  return `${baseUrl}?challenge=${encoded}`;
+  return `${baseUrl}/challenge?c=${encoded}`;
 }
 
 // Generate shareable URL for a challenge result
-export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.href.split('?')[0]): string {
+export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.origin): string {
   const encoded = encodeChallengeResult(result);
-  return `${baseUrl}?result=${encoded}`;
+  return `${baseUrl}/result?r=${encoded}`;
 }
 
-// Extract challenge from URL parameters
+// Extract challenge from URL parameters (supports both old and new formats)
 export function extractChallengeFromUrl(): WordChallenge | null {
   const urlParams = new URLSearchParams(window.location.search);
-  const challengeParam = urlParams.get('challenge');
+  // Try new format first (/challenge?c=...)
+  let challengeParam = urlParams.get('c');
+  // Fallback to old format (?challenge=...)
+  if (!challengeParam) {
+    challengeParam = urlParams.get('challenge');
+  }
 
   if (challengeParam) {
     return decodeWordChallenge(challengeParam);
@@ -158,10 +163,15 @@ export function extractChallengeFromUrl(): WordChallenge | null {
   return null;
 }
 
-// Extract result from URL parameters
+// Extract result from URL parameters (supports both old and new formats)
 export function extractResultFromUrl(): ChallengeResult | null {
   const urlParams = new URLSearchParams(window.location.search);
-  const resultParam = urlParams.get('result');
+  // Try new format first (/result?r=...)
+  let resultParam = urlParams.get('r');
+  // Fallback to old format (?result=...)
+  if (!resultParam) {
+    resultParam = urlParams.get('result');
+  }
 
   if (resultParam) {
     return decodeChallengeResult(resultParam);
@@ -260,6 +270,38 @@ export async function getChallengeCompletions(challengeId: string): Promise<any[
     console.error('[Challenge] Error getting completions:', error);
     return [];
   }
+}
+
+// Get challenge info from backend
+export async function getChallengeInfo(challengeId: string): Promise<any | null> {
+  try {
+    const wsUrl = getWebSocketUrl();
+    const httpUrl = wsUrl.replace(/^ws/, 'http');
+    
+    const response = await fetch(`${httpUrl}/api/challenge/${challengeId}`);
+    
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.challenge || null;
+  } catch (error) {
+    console.error('[Challenge] Error getting challenge info:', error);
+    return null;
+  }
+}
+
+// Check for new completions (for notifications)
+export async function checkForNewCompletions(challengeIds: string[]): Promise<Map<string, number>> {
+  const completionCounts = new Map<string, number>();
+  
+  for (const challengeId of challengeIds) {
+    const completions = await getChallengeCompletions(challengeId);
+    completionCounts.set(challengeId, completions.length);
+  }
+  
+  return completionCounts;
 }
 
 // Notify challenge creator when someone completes their challenge

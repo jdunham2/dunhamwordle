@@ -337,6 +337,8 @@ function App() {
   const [multiplayerRoomId, setMultiplayerRoomId] = useState('');
   const [isMultiplayerHost, setIsMultiplayerHost] = useState(false);
   const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
+  const [showResultShareConfirm, setShowResultShareConfirm] = useState(false);
+  const [pendingResultShare, setPendingResultShare] = useState<{url: string, message: string, creatorName?: string} | null>(null);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -463,30 +465,17 @@ function App() {
         console.log('Generated URL:', resultUrl);
         console.log('=============================');
 
-        // Show native share to reply with results
-        setTimeout(async () => {
-          const shared = await shareNative(
-            resultUrl,
-            'Dunham Wordle — Play with Friends',
-            `I just ${isWin ? 'solved' : 'played'} your Play with Friends challenge in Dunham Wordle in ${result.guesses.filter(guess => guess.trim() !== '').length} guesses!`
-          );
-
-          if (!shared) {
-            // Fallback to clipboard
-            try {
-              await navigator.clipboard.writeText(resultUrl);
-              alert('Result link copied to clipboard!');
-            } catch {
-              // Final fallback
-              const textArea = document.createElement('textarea');
-              textArea.value = resultUrl;
-              document.body.appendChild(textArea);
-              textArea.select();
-              document.execCommand('copy');
-              document.body.removeChild(textArea);
-              alert('Result link copied to clipboard!');
-            }
-          }
+        // Show confirmation modal before sharing
+        const guessCount = result.guesses.filter(guess => guess.trim() !== '').length;
+        const message = `I just ${isWin ? 'solved' : 'played'} your Play with Friends challenge in Dunham Wordle in ${guessCount} guesses!`;
+        
+        setTimeout(() => {
+          setPendingResultShare({
+            url: resultUrl,
+            message,
+            creatorName: currentChallenge.senderName || 'Friend'
+          });
+          setShowResultShareConfirm(true);
         }, 2000); // Wait for stats modal to show first
 
         // Clear the challenge
@@ -543,11 +532,23 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.title = "Dunham Wordle";
-    if (state.gameStatus === GameStatus.Won) {
-        document.title = "You Won! - Dunham Wordle";
+    // Dynamic page title based on URL type
+    const pathname = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (pathname.includes('/challenge') || urlParams.has('c') || urlParams.has('challenge')) {
+      const challenge = extractChallengeFromUrl();
+      const creatorName = challenge?.senderName || 'Friend';
+      document.title = `Challenge from ${creatorName} - Dunham Wordle`;
+    } else if (pathname.includes('/result') || urlParams.has('r') || urlParams.has('result')) {
+      const result = extractResultFromUrl();
+      document.title = result?.solved ? "Challenge Completed! - Dunham Wordle" : "Challenge Result - Dunham Wordle";
+    } else if (state.gameStatus === GameStatus.Won) {
+      document.title = "You Won! - Dunham Wordle";
     } else if (state.gameStatus === GameStatus.Lost) {
-        document.title = "Game Over - Dunham Wordle";
+      document.title = "Game Over - Dunham Wordle";
+    } else {
+      document.title = "Dunham Wordle";
     }
   }, [state.gameStatus]);
 
@@ -862,7 +863,44 @@ function App() {
     setShowMultiplayerLobby(false);
     setShowMultiplayerGame(false);
     setShowPlaybackView(false);
+    setShowResultShareConfirm(false);
     setShowStartScreen(true);
+  };
+
+  const handleShareResult = async () => {
+    if (!pendingResultShare) return;
+    
+    setShowResultShareConfirm(false);
+    
+    const shared = await shareNative(
+      pendingResultShare.url,
+      `My Result - Dunham Wordle`,
+      pendingResultShare.message
+    );
+
+    if (!shared) {
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(pendingResultShare.url);
+        alert('Result link copied to clipboard! Share it with ' + (pendingResultShare.creatorName || 'your friend'));
+      } catch {
+        // Final fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = pendingResultShare.url;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Result link copied to clipboard! Share it with ' + (pendingResultShare.creatorName || 'your friend'));
+      }
+    }
+    
+    setPendingResultShare(null);
+  };
+
+  const handleSkipResultShare = () => {
+    setShowResultShareConfirm(false);
+    setPendingResultShare(null);
   };
 
   const handleRoomCreated = (roomId: string, isHost: boolean, playerName: string) => {
@@ -1495,6 +1533,53 @@ function App() {
         validWords={wordListsState?.validWords}
         shareNative={shareNative}
       />
+
+      {/* Result Share Confirmation Modal */}
+      {showResultShareConfirm && pendingResultShare && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={handleSkipResultShare}>
+          <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={handleSkipResultShare} aria-label="Close">
+              <X className="h-6 w-6"/>
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-2xl font-bold mb-2">Challenge Complete!</h2>
+              <p className="text-gray-300">
+                You just completed {pendingResultShare.creatorName}'s challenge!
+              </p>
+            </div>
+
+            <div className="bg-zinc-700 p-4 rounded-lg mb-6">
+              <p className="text-sm text-gray-300 mb-2">
+                <strong>Share your results</strong> with {pendingResultShare.creatorName} so they know you completed it!
+              </p>
+              <p className="text-xs text-gray-400">
+                A share dialog will open where you can send your results.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleShareResult}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                Share My Results
+              </button>
+              <button
+                onClick={handleSkipResultShare}
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              Note: {pendingResultShare.creatorName} won't be notified if you skip
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Static SEO content section */}
       <section className="hidden" aria-hidden="true">

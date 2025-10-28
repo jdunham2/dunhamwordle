@@ -341,6 +341,26 @@ export default {
       }
     }
     
+    // GET /api/challenge/:id - Get challenge info
+    if (req.method === "GET" && url.pathname.match(/^\/api\/challenge\/[^\/]+$/) && !url.pathname.includes('/completions')) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const challenge = await getChallenge(challengeId);
+        if (challenge) {
+          return Response.json({ success: true, challenge }, { headers: corsHeaders });
+        } else {
+          return Response.json({ success: false, error: "Challenge not found" }, { status: 404, headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error("Error getting challenge:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
     // POST /api/challenge/:id/complete - Submit completion
     if (req.method === "POST" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/complete$/)) {
       try {
