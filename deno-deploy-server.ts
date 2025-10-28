@@ -189,6 +189,15 @@ async function sendChallengeToUser(fromUserId: string, toUsername: string, word:
   
   await saveDB(db);
   
+  // Send WebSocket notification to recipient
+  sendNotificationToUser(toUser.userId, {
+    kind: 'new-challenge',
+    fromUsername: fromUser.username,
+    fromAvatar: fromUser.avatar,
+    word,
+    challengeId
+  });
+  
   // TODO: Send push notification if user has subscription
   await sendPushNotification(toUser.userId, {
     title: `New Challenge from ${fromUser.username}!`,
@@ -219,15 +228,34 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
   const challenges = db.userChallenges[userId] || [];
   const challenge = challenges.find((c: any) => c.challengeId === challengeId);
   if (challenge) {
+    // Check if already completed to prevent duplicates
+    if (challenge.completed) {
+      console.log(`Challenge ${challengeId} already completed by user ${userId}`);
+      return;
+    }
+    
     challenge.completed = true;
     challenge.completedAt = Date.now();
     challenge.result = result;
     await saveDB(db);
     
-    // Notify sender
+    // Send WebSocket notification to sender
+    const completerName = await getUsername(userId);
+    const db2 = await getDB();
+    sendNotificationToUser(challenge.fromUserId, {
+      kind: 'challenge-completed',
+      completerName,
+      completerAvatar: db2.users[userId]?.avatar || '👤',
+      word: challenge.word,
+      solved: result?.solved || false,
+      guesses: result?.guesses?.length || 0,
+      challengeId
+    });
+    
+    // Notify sender with push notification
     await sendPushNotification(challenge.fromUserId, {
       title: `Challenge Completed!`,
-      body: `${await getUsername(userId)} completed your challenge`,
+      body: `${completerName} completed your challenge`,
       icon: '🎉',
     });
   }
@@ -320,9 +348,63 @@ async function sendPushNotification(userId: string, payload: any) {
 // In-memory storage for active connections
 const rooms = new Map<string, Set<WebSocket>>();
 const socketToRoom = new WeakMap<WebSocket, string>();
+const socketToUser = new WeakMap<WebSocket, string>(); // Track which user each socket belongs to
+const userSockets = new Map<string, Set<WebSocket>>(); // Track all active sockets per user
 
 function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Send notification to all active sockets for a user
+function sendNotificationToUser(userId: string, notification: any) {
+  const sockets = userSockets.get(userId);
+  if (!sockets || sockets.size === 0) {
+    console.log(`No active sockets for user ${userId}`);
+    return;
+  }
+  
+  const message = JSON.stringify({
+    type: 'notification',
+    ...notification
+  });
+  
+  sockets.forEach(socket => {
+    try {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(message);
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    }
+  });
+  
+  console.log(`Sent notification to ${sockets.size} socket(s) for user ${userId}`);
+}
+
+// Track user WebSocket connection
+function registerUserSocket(userId: string, socket: WebSocket) {
+  if (!userSockets.has(userId)) {
+    userSockets.set(userId, new Set());
+  }
+  userSockets.get(userId)!.add(socket);
+  socketToUser.set(socket, userId);
+  console.log(`Registered socket for user ${userId}, total: ${userSockets.get(userId)!.size}`);
+}
+
+// Remove user WebSocket connection
+function unregisterUserSocket(socket: WebSocket) {
+  const userId = socketToUser.get(socket);
+  if (userId) {
+    const sockets = userSockets.get(userId);
+    if (sockets) {
+      sockets.delete(socket);
+      if (sockets.size === 0) {
+        userSockets.delete(userId);
+      }
+      console.log(`Unregistered socket for user ${userId}, remaining: ${sockets.size}`);
+    }
+    socketToUser.delete(socket);
+  }
 }
 
 // Main handler
@@ -339,6 +421,13 @@ export default {
       socket.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data);
+          
+          // Handle user registration
+          if (data.type === 'register-user' && data.userId) {
+            registerUserSocket(data.userId, socket);
+            socket.send(JSON.stringify({ type: 'user-registered' }));
+            break;
+          }
           
           switch (data.type) {
             case "create-room": {
@@ -535,6 +624,9 @@ export default {
       };
 
       socket.onclose = () => {
+        // Unregister user tracking
+        unregisterUserSocket(socket);
+        
         const roomId = socketToRoom.get(socket);
         if (roomId) {
           const room = rooms.get(roomId);
