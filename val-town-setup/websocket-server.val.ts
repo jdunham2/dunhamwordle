@@ -16,13 +16,13 @@
 
 import { blob } from "https://esm.town/v/std/blob";
 
-// Initialize database schema
-// Val Town SQLite is accessed via blob storage
-const db = await blob.getJSON("wordle_db") || {
-  rooms: {},
-  challenges: {},
-  completions: []
-};
+let db: any = { rooms: {}, challenges: {}, completions: [] };
+
+try {
+  db = (await blob.getJSON("wordle_db")) || db;
+} catch (err) {
+  console.error("Failed to load blob:", err);
+}
 
 // Helper functions for database operations
 async function saveDB() {

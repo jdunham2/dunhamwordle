@@ -1,8 +1,8 @@
 # Platform Comparison for Dunham Wordle
 
-## TL;DR: Use Val Town 🏝️
+## TL;DR: Use Deno Deploy 🦕
 
-It's the easiest, fastest, and most complete solution for this app.
+Val Town doesn't support external WebSocket connections. Deno Deploy is the easiest alternative!
 
 ---
 

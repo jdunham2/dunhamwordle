@@ -1,212 +1,305 @@
 import { WebSocketServer } from 'ws';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
-// Use PORT environment variable for Render, fallback to 8080 for local dev
+// Use PORT environment variable for deployment, fallback to 8080 for local dev
 const PORT = process.env.PORT || 8080;
 const wss = new WebSocketServer({ port: PORT });
 
+// Local file-based storage (simpler than SQLite for development)
+const DB_FILE = './local-db.json';
+
+// Initialize database
+let db = {
+  rooms: {},
+  challenges: {},
+  completions: []
+};
+
+// Load database from file
+async function loadDB() {
+  try {
+    if (existsSync(DB_FILE)) {
+      const data = await fs.readFile(DB_FILE, 'utf8');
+      db = JSON.parse(data);
+      console.log('Database loaded from file');
+    }
+  } catch (error) {
+    console.error('Error loading database:', error);
+  }
+}
+
+// Save database to file
+async function saveDB() {
+  try {
+    await fs.writeFile(DB_FILE, JSON.stringify(db, null, 2));
+  } catch (error) {
+    console.error('Error saving database:', error);
+  }
+}
+
+// Helper functions for database operations
+async function addChallenge(challenge) {
+  db.challenges[challenge.challengeId] = {
+    ...challenge,
+    createdAt: Date.now(),
+    completedCount: 0
+  };
+  await saveDB();
+}
+
+async function addCompletion(completion) {
+  db.completions.push({
+    ...completion,
+    id: db.completions.length + 1,
+    completedAt: Date.now()
+  });
+  
+  // Update challenge completion count
+  if (db.challenges[completion.challengeId]) {
+    db.challenges[completion.challengeId].completedCount++;
+  }
+  
+  await saveDB();
+}
+
+async function getChallengeCompletions(challengeId) {
+  return db.completions.filter(c => c.challengeId === challengeId);
+}
+
+async function getChallenge(challengeId) {
+  return db.challenges[challengeId];
+}
+
+// In-memory storage for active connections
 const rooms = new Map();
+const socketToRoom = new WeakMap();
 
 function generateRoomId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+// Load database on startup
+await loadDB();
+
+console.log(`WebSocket server starting on port ${PORT}...`);
+
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
 
       switch (data.type) {
-        case 'get-room-status':
-          console.log(`\n=== GET ROOM STATUS ===`);
-          console.log(`Room ID: ${data.roomId}`);
-          const statusRoom = rooms.get(data.roomId);
-          if (!statusRoom) {
-            console.log(`ERROR: Room ${data.roomId} not found`);
-            ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
-            break;
-          }
-          
-          // Check if this WebSocket is in the room
-          const playerIndex = statusRoom.players.findIndex(p => p.ws === ws);
-          if (playerIndex === -1) {
-            console.log(`ERROR: WebSocket not in room ${data.roomId}`);
-            ws.send(JSON.stringify({ type: 'error', message: 'Not in room' }));
-            break;
-          }
-          
-          // Send room status
-          const statusMessage = {
-            type: 'room-status',
-            roomId: data.roomId,
-            playerCount: statusRoom.players.length,
-            isHost: playerIndex === 0
-          };
-          console.log(`Sending room status:`, JSON.stringify(statusMessage));
-          ws.send(JSON.stringify(statusMessage));
-          console.log(`=== GET ROOM STATUS COMPLETE ===\n`);
-          break;
-          
-        case 'create-room':
+        case 'create-room': {
           const roomId = generateRoomId();
-          const newRoom = {
-            players: [{ ws, id: generateRoomId() }],
-            host: ws
+          rooms.set(roomId, new Set([ws]));
+          socketToRoom.set(ws, roomId);
+          
+          // Store in database
+          db.rooms[roomId] = {
+            roomId,
+            createdAt: Date.now(),
+            hostUsername: data.username || 'anonymous'
           };
-          rooms.set(roomId, newRoom);
+          await saveDB();
           
           ws.send(JSON.stringify({
-            type: 'player-joined',
+            type: 'room-created',
             roomId,
-            isHost: true
           }));
+          
           console.log(`Room ${roomId} created`);
           break;
+        }
 
-        case 'join-room':
-          console.log(`\n=== JOIN ROOM REQUEST ===`);
-          console.log(`Room ID: ${data.roomId}`);
-          console.log(`Total rooms: ${rooms.size}`);
+        case 'join-room': {
+          const { roomId } = data;
+          const room = rooms.get(roomId);
           
-          const room = rooms.get(data.roomId);
           if (!room) {
-            console.log(`ERROR: Room ${data.roomId} not found`);
-            ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Room not found',
+            }));
             break;
           }
           
-          console.log(`Room ${data.roomId} found with ${room.players.length} players`);
-          
-          // Check if this WebSocket is already in the room
-          const alreadyInRoom = room.players.some(player => player.ws === ws);
-          console.log(`Already in room check: ${alreadyInRoom}`);
-          
-          if (alreadyInRoom) {
-            console.log('>>> WebSocket ALREADY in room - NOT adding, NOT sending message');
-            console.log('=== JOIN ROOM COMPLETE (no action) ===\n');
+          if (room.size >= 2) {
+            ws.send(JSON.stringify({
+              type: 'room-full',
+            }));
             break;
           }
           
-          console.log('>>> New player joining room');
+          // Check if already in room
+          if (room.has(ws)) {
+            console.log(`Socket already in room ${roomId}`);
+            break;
+          }
           
-          // Allow unlimited players - removed the 2-player limit
-          const playerId = generateRoomId();
-          room.players.push({ ws, id: playerId });
-          console.log(`Added player ${playerId} to room ${data.roomId}`);
-          console.log(`Room now has ${room.players.length} players`);
+          room.add(ws);
+          socketToRoom.set(ws, roomId);
           
-          // Notify ALL players (so everyone sees updated count)
-          console.log(`Notifying all ${room.players.length} players...`);
-          room.players.forEach((player, index) => {
-            const message = {
+          const isHost = room.size === 1;
+          const playerCount = room.size;
+          
+          // Notify all players
+          room.forEach((client) => {
+            client.send(JSON.stringify({
               type: 'player-joined',
-              roomId: data.roomId,
-              isHost: index === 0,
-              playerCount: room.players.length,
-              isNewPlayer: player.ws === ws
-            };
-            console.log(`  → Sending to player ${player.id}:`, JSON.stringify(message));
-            player.ws.send(JSON.stringify(message));
+              roomId,
+              isHost: client === ws ? !isHost : isHost,
+              playerCount,
+              isNewPlayer: client !== ws,
+            }));
           });
           
-          console.log(`=== JOIN ROOM COMPLETE (${room.players.length} total) ===\n`);
+          console.log(`Player joined room ${roomId} (${playerCount} players)`);
           break;
+        }
 
         case 'offer':
-          // Forward offer to the other player
-          const offerRoom = rooms.get(data.roomId);
-          if (offerRoom) {
-            console.log(`Forwarding offer in room ${data.roomId} (${offerRoom.players.length} players)`);
-            let sentCount = 0;
-            offerRoom.players.forEach(player => {
-              if (player.ws !== ws) {
-                console.log(`Sending offer to player ${player.id}`);
-                player.ws.send(JSON.stringify({
-                  type: 'offer',
-                  roomId: data.roomId,
-                  data: data.data
-                }));
-                sentCount++;
-              } else {
-                console.log(`Skipping sender ${player.id}`);
-              }
-            });
-            console.log(`Offered sent to ${sentCount} players`);
-          }
-          break;
-
         case 'answer':
-          // Forward answer to the other player
-          const answerRoom = rooms.get(data.roomId);
-          if (answerRoom) {
-            answerRoom.players.forEach(player => {
-              if (player.ws !== ws) {
-                player.ws.send(JSON.stringify({
-                  type: 'answer',
-                  roomId: data.roomId,
-                  data: data.data
-                }));
-              }
-            });
-          }
+        case 'ice-candidate': {
+          const roomId = socketToRoom.get(ws);
+          if (!roomId) break;
+          
+          const room = rooms.get(roomId);
+          if (!room) break;
+          
+          // Forward to other players in room
+          room.forEach((client) => {
+            if (client !== ws) {
+              client.send(JSON.stringify(data));
+            }
+          });
           break;
+        }
 
-        case 'ice-candidate':
-          // Forward ICE candidate to the other player
-          const iceRoom = rooms.get(data.roomId);
-          if (iceRoom) {
-            iceRoom.players.forEach(player => {
-              if (player.ws !== ws) {
-                player.ws.send(JSON.stringify({
-                  type: 'ice-candidate',
-                  roomId: data.roomId,
-                  data: data.data
-                }));
-              }
-            });
-          } else {
-            console.log(`Ice candidate received for non-existent room ${data.roomId}`);
+        case 'get-room-status': {
+          const { roomId } = data;
+          const room = rooms.get(roomId);
+          
+          if (!room) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Room not found',
+            }));
+            break;
           }
+          
+          const isHost = Array.from(room)[0] === ws;
+          
+          ws.send(JSON.stringify({
+            type: 'room-status',
+            roomId,
+            playerCount: room.size,
+            isHost,
+          }));
           break;
+        }
 
-        default:
-          console.log('Unknown message type:', data.type);
+        // Challenge API
+        case 'create-challenge': {
+          const { challengeId, word, creatorId, creatorName } = data;
+          
+          await addChallenge({
+            challengeId,
+            creatorId,
+            creatorName,
+            word
+          });
+          
+          ws.send(JSON.stringify({
+            type: 'challenge-created',
+            challengeId,
+          }));
+          
+          console.log(`Challenge ${challengeId} created by ${creatorName}`);
+          break;
+        }
+
+        case 'complete-challenge': {
+          const { challengeId, completerId, completerName, won, guesses } = data;
+          
+          await addCompletion({
+            challengeId,
+            completerId,
+            completerName,
+            won,
+            guesses
+          });
+          
+          // Get creator info to notify them
+          const challenge = await getChallenge(challengeId);
+          
+          if (challenge) {
+            ws.send(JSON.stringify({
+              type: 'challenge-completed',
+              challengeId,
+              creatorId: challenge.creatorId,
+              completerName,
+              won,
+              guesses,
+            }));
+          }
+          
+          console.log(`Challenge ${challengeId} completed by ${completerName} (${won ? 'won' : 'lost'})`);
+          break;
+        }
+
+        case 'get-challenge-completions': {
+          const { challengeId } = data;
+          
+          const completions = await getChallengeCompletions(challengeId);
+          
+          ws.send(JSON.stringify({
+            type: 'challenge-completions',
+            challengeId,
+            completions: completions.map(c => ({
+              completerName: c.completerName,
+              won: c.won,
+              guesses: c.guesses,
+              completedAt: c.completedAt,
+            })),
+          }));
+          break;
+        }
       }
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('Error handling message:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Internal server error',
+      }));
     }
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
-    // Clean up rooms
-    for (const [roomId, room] of rooms.entries()) {
-      const index = room.players.findIndex(p => p.ws === ws);
-      if (index !== -1) {
-        const wasHost = index === 0;
-        room.players.splice(index, 1);
+    const roomId = socketToRoom.get(ws);
+    if (roomId) {
+      const room = rooms.get(roomId);
+      if (room) {
+        room.delete(ws);
         
-        // If host left, make the next player the host
-        if (wasHost && room.players.length > 0) {
-          console.log(`Host left, promoting next player in room ${roomId}`);
-        }
-        
-        // Notify remaining players
-        room.players.forEach(player => {
-          player.ws.send(JSON.stringify({
-            type: 'player-left'
-          }));
-        });
-        
-        // Only clean up if ALL players left
-        if (room.players.length === 0) {
+        if (room.size === 0) {
           rooms.delete(roomId);
-          console.log(`Room ${roomId} cleaned up (all players left)`);
+          console.log(`Room ${roomId} cleaned up (empty)`);
+        } else {
+          // Notify remaining players
+          room.forEach((client) => {
+            client.send(JSON.stringify({
+              type: 'player-left',
+              playerCount: room.size,
+            }));
+          });
+          console.log(`Player left room ${roomId} (${room.size} remaining)`);
         }
-        break;
       }
     }
+    console.log('Client disconnected');
   });
 
   ws.on('error', (error) => {
@@ -214,5 +307,6 @@ wss.on('connection', (ws) => {
   });
 });
 
-console.log(`WebSocket server running on port ${PORT}`);
-
+console.log(`✅ WebSocket server running on ws://localhost:${PORT}`);
+console.log(`📊 Database file: ${DB_FILE}`);
+console.log(`🎮 Ready for multiplayer connections!`);
