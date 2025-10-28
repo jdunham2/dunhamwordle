@@ -23,6 +23,7 @@ async function getDB() {
     completions: [],
     users: {},
     userChallenges: {}, // userId -> array of received challenges
+    sentChallenges: {}, // userId -> array of challenges they sent
     pushSubscriptions: {} // userId -> push subscription
   };
   
@@ -39,6 +40,7 @@ async function getDB() {
     completions: db.completions || [],
     users: db.users || {},
     userChallenges: db.userChallenges || {},
+    sentChallenges: db.sentChallenges || {},
     pushSubscriptions: db.pushSubscriptions || {}
   };
 }
@@ -168,6 +170,21 @@ async function sendChallengeToUser(fromUserId: string, toUsername: string, word:
     sentAt: Date.now(),
     read: false,
     completed: false,
+  });
+  
+  // Initialize sent challenges array if needed
+  if (!db.sentChallenges[fromUser.userId]) {
+    db.sentChallenges[fromUser.userId] = [];
+  }
+  
+  // Add challenge to sender's sent list
+  db.sentChallenges[fromUser.userId].push({
+    challengeId,
+    toUserId: toUser.userId,
+    toUsername: toUser.username,
+    toAvatar: toUser.avatar,
+    word,
+    sentAt: Date.now(),
   });
   
   await saveDB(db);
@@ -720,6 +737,23 @@ export default {
         return Response.json(challenges, { headers: corsHeaders });
       } catch (error) {
         console.error("Error getting user challenges:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // GET /api/user/:userId/sent-challenges - Get user's sent challenges
+    if (req.method === "GET" && url.pathname.match(/^\/api\/user\/[^\/]+\/sent-challenges$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const db = await getDB();
+        const sentChallenges = db.sentChallenges[userId] || [];
+        return Response.json(sentChallenges, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error getting sent challenges:", error);
         return Response.json(
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }

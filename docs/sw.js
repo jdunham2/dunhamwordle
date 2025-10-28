@@ -13,7 +13,7 @@ const coreUrlsToCache = [
 // Dynamic asset files (updated on each build)
 const assetFiles = [
   "./assets/index-BwvGxbNA.css",
-  "./assets/index-CVXZXGRT.js"
+  "./assets/index-s89WLXCC.js"
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getMyChallenges, getChallengeCompletions, generateResultUrl } from '../services/challengeService';
+import { getWebSocketUrl } from '../services/wsConfig';
 
 interface MyChallengesViewProps {
   onClose: () => void;
+  userId?: string;
 }
 
 interface ChallengeWithCompletions {
@@ -15,7 +17,7 @@ interface ChallengeWithCompletions {
   completionDetails: any[];
 }
 
-export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) => {
+export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose, userId }) => {
   const [challenges, setChallenges] = useState<ChallengeWithCompletions[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeWithCompletions | null>(null);
@@ -26,7 +28,35 @@ export const MyChallengesView: React.FC<MyChallengesViewProps> = ({ onClose }) =
 
   const loadChallenges = async () => {
     setLoading(true);
-    const myChallenges = getMyChallenges();
+    
+    let myChallenges: any[] = [];
+    
+    // Load from backend if userId provided
+    if (userId) {
+      try {
+        const wsUrl = getWebSocketUrl();
+        const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+        const response = await fetch(`${httpUrl}/api/user/${userId}/sent-challenges`);
+        if (response.ok) {
+          const sentChallenges = await response.json();
+          // Convert sent challenges to the format expected by this component
+          myChallenges = sentChallenges.map((c: any) => ({
+            challengeId: c.challengeId,
+            word: c.word,
+            senderName: 'You', // Sent by current user
+            sentToName: c.toUsername,
+            createdAt: c.sentAt,
+          }));
+        }
+      } catch (error) {
+        console.error('[MyChallengesView] Failed to load sent challenges:', error);
+        // Fallback to localStorage if backend fails
+        myChallenges = getMyChallenges();
+      }
+    } else {
+      // Fallback to localStorage if no userId
+      myChallenges = getMyChallenges();
+    }
     
     // Load completion counts for each challenge
     const challengesWithCompletions = await Promise.all(
