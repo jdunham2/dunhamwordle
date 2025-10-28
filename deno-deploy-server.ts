@@ -710,18 +710,23 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
     
-    // GET /api/users - Get all users
+    // GET /api/users - Get all users (with online status)
     if (req.method === "GET" && url.pathname === "/api/users") {
-      try {
+try {
         const users = await getAllUsers();
-        return Response.json(users, { headers: corsHeaders });
+        // Add online status to each user
+        const usersWithOnlineStatus = users.map((user: any) => ({
+          ...user,
+          isOnline: userSockets.has(user.userId) && (userSockets.get(user.userId)?.size || 0) > 0
+        }));
+        return Response.json(usersWithOnlineStatus, { headers: corsHeaders });
       } catch (error) {
         console.error("Error getting users:", error);
         return Response.json(
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }
         );
-      }
+     }
     }
     
     // POST /api/user/create - Create new user
