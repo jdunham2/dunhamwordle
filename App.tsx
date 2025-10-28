@@ -9,9 +9,8 @@ import { ResultPlaybackScreen } from './components/ResultPlaybackScreen';
 import { PlaybackView } from './components/PlaybackView';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { CollaborativeMultiplayerGame } from './components/CollaborativeMultiplayerGame';
-import { MyChallengesView } from './components/MyChallengesView';
 import { UserAuthScreen } from './components/UserAuthScreen';
-import { ChallengeInbox } from './components/ChallengeInbox';
+import { ChallengesView } from './components/ChallengesView';
 import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
@@ -395,11 +394,10 @@ function App() {
   const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
   const [showResultShareConfirm, setShowResultShareConfirm] = useState(false);
   const [pendingResultShare, setPendingResultShare] = useState<{url: string, message: string, creatorName?: string} | null>(null);
-  const [showMyChallenges, setShowMyChallenges] = useState(false);
+  const [showChallenges, setShowChallenges] = useState(false);
   
   // User account states
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [showInbox, setShowInbox] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Enable audio on first user interaction
@@ -1032,13 +1030,13 @@ function App() {
     setShowMultiplayerGame(false);
     setShowPlaybackView(false);
     setShowResultShareConfirm(false);
-    setShowMyChallenges(false);
+    setShowChallenges(false);
     setShowStartScreen(true);
   };
 
   const handleMyChallenges = () => {
     setShowStartScreen(false);
-    setShowMyChallenges(true);
+    setShowChallenges(true);
   };
 
   const handleShareResult = async () => {
@@ -1282,19 +1280,9 @@ function App() {
         }} aria-label="Create word challenge">
              <Share2 className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="Sent Challenges">
+          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="Challenges">
              <Trophy className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
-          {currentUser && (
-            <button onClick={() => { enableAudio(); setShowInbox(true); }} aria-label="Inbox" className="relative">
-              <Inbox className="h-5 w-5 text-gray-400 hover:text-white" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-          )}
           {isMobile && (
             <button onClick={handleDownload} aria-label="Install app">
               <Download className="h-5 w-5 text-gray-400 hover:text-white" />
@@ -1725,28 +1713,6 @@ function App() {
         />
       )}
 
-      {/* Challenge Inbox */}
-      {currentUser && showInbox && (
-        <ChallengeInbox
-          user={currentUser}
-          onClose={() => {
-            setShowInbox(false);
-            loadUnreadCount(currentUser.userId); // Refresh count
-          }}
-          onStartChallenge={(challenge) => {
-            setShowInbox(false);
-            setCurrentChallenge(challenge);
-            setShowStartScreen(false);
-            startNewGame(GameMode.Unlimited).then(() => {
-              if (wordLists.current) {
-                wordLists.current.validWords.add(challenge.word);
-                setWordListsState({ ...wordLists.current });
-              }
-              dispatch({ type: 'START_GAME', payload: { solution: challenge.word, gameMode: GameMode.Unlimited } });
-            });
-          }}
-        />
-      )}
 
       {/* Result Share Confirmation Modal */}
       {showResultShareConfirm && pendingResultShare && (
@@ -1795,8 +1761,27 @@ function App() {
       )}
 
       {/* My Challenges View */}
-      {showMyChallenges && (
-        <MyChallengesView onClose={() => setShowMyChallenges(false)} />
+      {showChallenges && currentUser && (
+        <ChallengesView
+          user={currentUser}
+          onClose={() => setShowChallenges(false)}
+          onStartChallenge={(challenge) => {
+            setShowChallenges(false);
+            setCurrentChallenge(challenge);
+            setShowStartScreen(false);
+            startNewGame(GameMode.Unlimited).then(() => {
+              if (wordLists.current) {
+                wordLists.current.validWords.add(challenge.word);
+                setWordListsState({ ...wordLists.current });
+              }
+              dispatch({ type: 'START_GAME', payload: { solution: challenge.word, gameMode: GameMode.Unlimited } });
+            });
+          }}
+          onCreateNew={() => {
+            setShowChallenges(false);
+            setShowWordChallenge(true);
+          }}
+        />
       )}
 
       {/* Static SEO content section */}
