@@ -108,12 +108,18 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
       // Get the first completion's replay URL
       const firstCompletion = challenge.completionDetails[0];
       
+      console.log('[ChallengesView] Completion data:', firstCompletion);
+      
       // Try resultUrl first (new format), then generate from result data (old format)
       if (firstCompletion.resultUrl) {
+        console.log('[ChallengesView] Opening resultUrl:', firstCompletion.resultUrl);
         window.open(firstCompletion.resultUrl, '_blank');
       } else if (firstCompletion.result) {
+        console.log('[ChallengesView] Generating resultUrl from result');
         const replayUrl = generateResultUrl(firstCompletion.result);
         window.open(replayUrl, '_blank');
+      } else {
+        console.error('[ChallengesView] No resultUrl or result found in completion data');
       }
     }
   };
