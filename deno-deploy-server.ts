@@ -64,6 +64,7 @@ async function addChallenge(challenge: any) {
 }
 
 async function addCompletion(completion: any) {
+  console.log('[Backend] addCompletion called with:', JSON.stringify(completion, null, 2));
   const db = await getDB();
   db.completions.push({
     ...completion,
@@ -76,11 +77,14 @@ async function addCompletion(completion: any) {
   }
   
   await saveDB(db);
+  console.log('[Backend] Completion added. Total completions:', db.completions.length);
 }
 
 async function getChallengeCompletions(challengeId: string) {
   const db = await getDB();
-  return db.completions.filter((c: any) => c.challengeId === challengeId);
+  const filtered = db.completions.filter((c: any) => c.challengeId === challengeId);
+  console.log(`[Backend] getChallengeCompletions for ${challengeId}: found ${filtered.length} completions out of ${db.completions.length} total`);
+  return filtered;
 }
 
 async function getChallenge(challengeId: string) {
