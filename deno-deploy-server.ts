@@ -233,6 +233,26 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
   }
 }
 
+async function deleteReceivedChallenge(userId: string, challengeId: string) {
+  const db = await getDB();
+  if (db.userChallenges[userId]) {
+    db.userChallenges[userId] = db.userChallenges[userId].filter(
+      (c: any) => c.challengeId !== challengeId
+    );
+    await saveDB(db);
+  }
+}
+
+async function deleteSentChallenge(userId: string, challengeId: string) {
+  const db = await getDB();
+  if (db.sentChallenges[userId]) {
+    db.sentChallenges[userId] = db.sentChallenges[userId].filter(
+      (c: any) => c.challengeId !== challengeId
+    );
+    await saveDB(db);
+  }
+}
+
 async function getUsername(userId: string): Promise<string> {
   const user = await getUser(userId);
   return user?.username || 'Someone';
@@ -803,6 +823,40 @@ export default {
         return Response.json({ success: true }, { headers: corsHeaders });
       } catch (error) {
         console.error("Error marking challenge as completed:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // DELETE /api/challenge/:id/received - Delete received challenge
+    if (req.method === "DELETE" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/received$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const { userId } = await req.json();
+        await deleteReceivedChallenge(userId, challengeId);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error deleting received challenge:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // DELETE /api/challenge/:id/sent - Delete sent challenge
+   if (req.method === "DELETE" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/sent$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const { userId } = await req.json();
+        await deleteSentChallenge(userId, challengeId);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error deleting sent challenge:", error);
         return Response.json(
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }

@@ -3,7 +3,7 @@ import { getUserChallenges, User } from '../services/userService';
 import { getChallengeCompletions, generateResultUrl } from '../services/challengeService';
 import { getWebSocketUrl } from '../services/wsConfig';
 import { WordChallenge } from '../services/challengeService';
-import { Mail, Trophy, Plus, Clock, CheckCircle } from 'lucide-react';
+import { Mail, Trophy, Plus, Clock, CheckCircle, Trash2 } from 'lucide-react';
 
 interface ChallengesViewProps {
   user: User;
@@ -115,6 +115,48 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
     }
   };
 
+  const handleDeleteReceived = async (challengeId: string) => {
+    if (!confirm('Are you sure you want to delete this challenge?')) return;
+    
+    try {
+      const wsUrl = getWebSocketUrl();
+      const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+      const response = await fetch(`${httpUrl}/api/challenge/${challengeId}/received`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.userId }),
+      });
+      
+      if (response.ok) {
+        setReceivedChallenges(receivedChallenges.filter(c => c.challengeId !== challengeId));
+      }
+    } catch (error) {
+      console.error('[ChallengesView] Failed to delete received challenge:', error);
+      alert('Failed to delete challenge. Please try again.');
+    }
+  };
+
+  const handleDeleteSent = async (challengeId: string) => {
+    if (!confirm('Are you sure you want to delete this challenge?')) return;
+    
+    try {
+      const wsUrl = getWebSocketUrl();
+      const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+      const response = await fetch(`${httpUrl}/api/challenge/${challengeId}/sent`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.userId }),
+      });
+      
+      if (response.ok) {
+        setSentChallenges(sentChallenges.filter(c => c.challengeId !== challengeId));
+      }
+    } catch (error) {
+      console.error('[ChallengesView] Failed to delete sent challenge:', error);
+      alert('Failed to delete challenge. Please try again.');
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -206,14 +248,13 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                 {receivedChallenges.map((challenge) => (
                   <div
                     key={challenge.challengeId}
-                    onClick={() => handleChallengeClick(challenge)}
-                    className={`bg-zinc-700 rounded-lg p-4 hover:bg-zinc-600 transition-colors cursor-pointer border-l-4 ${
+                    className={`bg-zinc-700 rounded-lg p-4 hover:bg-zinc-600 transition-colors border-l-4 ${
                       !challenge.read ? 'border-blue-500' : 'border-transparent'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="text-3xl">{challenge.fromAvatar}</div>
-                      <div className="flex-1">
+                      <div className="text-3xl cursor-pointer" onClick={() => handleChallengeClick(challenge)}>{challenge.fromAvatar}</div>
+                      <div className="flex-1 cursor-pointer" onClick={() => handleChallengeClick(challenge)}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold">{challenge.fromUsername}</span>
                           {!challenge.read && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
@@ -229,6 +270,13 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                           {formatDate(challenge.sentAt)}
                         </div>
                       </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteReceived(challenge.challengeId); }}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                        aria-label="Delete challenge"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -274,6 +322,13 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                           </div>
                         )}
                       </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteSent(challenge.challengeId); }}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                        aria-label="Delete challenge"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                     </div>
                   </div>
                 ))}
