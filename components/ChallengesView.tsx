@@ -103,7 +103,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
     setLoading(false);
   };
 
-  const handleSentChallengeClick = (challenge: (SentChallenge & { completions: number; completionDetails: any[] })) => {
+const handleSentChallengeClick = (challenge: (SentChallenge & { completions: number; completionDetails: any[] })) => {
     if (challenge.completions > 0 && challenge.completionDetails.length > 0) {
       // Get the first completion's replay URL
       const firstCompletion = challenge.completionDetails[0];
@@ -119,7 +119,18 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
         const replayUrl = generateResultUrl(firstCompletion.result);
         window.open(replayUrl, '_blank');
       } else {
-        console.error('[ChallengesView] No resultUrl or result found in completion data');
+        // Fallback: construct result from individual fields
+        console.log('[ChallengesView] Constructing resultUrl from completion fields');
+        const result = {
+          challengeId: firstCompletion.challengeId,
+          word: challenge.word,
+          guesses: firstCompletion.guesses || [],
+          solved: firstCompletion.solved || false,
+          solveTime: firstCompletion.solveTime || 0,
+          createdAt: firstCompletion.completedAt ? new Date(firstCompletion.completedAt) : new Date()
+        };
+        const replayUrl = generateResultUrl(result);
+        window.open(replayUrl, '_blank');
       }
     }
   };
