@@ -17,7 +17,14 @@ const kv = await Deno.openKv();
 // Get database
 async function getDB() {
   const result = await kv.get(["wordle_db"]);
-  return result.value || { rooms: {}, challenges: {}, completions: [] };
+  return result.value || { 
+    rooms: {}, 
+    challenges: {}, 
+    completions: [],
+    users: {},
+    userChallenges: {}, // userId -> array of received challenges
+    pushSubscriptions: {} // userId -> push subscription
+  };
 }
 
 // Save database
@@ -59,6 +66,152 @@ async function getChallengeCompletions(challengeId: string) {
 async function getChallenge(challengeId: string) {
   const db = await getDB();
   return db.challenges[challengeId];
+}
+
+// User management functions
+function generateUserId(): string {
+  return `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+async function createUser(username: string, avatar: string) {
+  const db = await getDB();
+  const userId = generateUserId();
+  const user = {
+    userId,
+    username,
+    avatar,
+    createdAt: Date.now(),
+    lastSeen: Date.now(),
+  };
+  db.users[userId] = user;
+  await saveDB(db);
+  return user;
+}
+
+async function getUser(userId: string) {
+  const db = await getDB();
+  return db.users[userId];
+}
+
+async function getUserByUsername(username: string) {
+  const db = await getDB();
+  return Object.values(db.users).find((u: any) => 
+    u.username.toLowerCase() === username.toLowerCase()
+  );
+}
+
+async function getAllUsers() {
+  const db = await getDB();
+  return Object.values(db.users);
+}
+
+async function updateUserLastSeen(userId: string) {
+  const db = await getDB();
+  if (db.users[userId]) {
+    db.users[userId].lastSeen = Date.now();
+    await saveDB(db);
+  }
+}
+
+async function sendChallengeToUser(fromUserId: string, toUsername: string, word: string, challengeId: string) {
+  const db = await getDB();
+  const toUser = await getUserByUsername(toUsername);
+  
+  if (!toUser) {
+    return { success: false, error: 'User not found' };
+  }
+  
+  const fromUser = db.users[fromUserId];
+  if (!fromUser) {
+    return { success: false, error: 'Sender not found' };
+  }
+  
+  // Initialize user challenges array if needed
+  if (!db.userChallenges[toUser.userId]) {
+    db.userChallenges[toUser.userId] = [];
+  }
+  
+  // Add challenge to recipient's inbox
+  db.userChallenges[toUser.userId].push({
+    challengeId,
+    fromUserId: fromUser.userId,
+    fromUsername: fromUser.username,
+    fromAvatar: fromUser.avatar,
+    word,
+    sentAt: Date.now(),
+    read: false,
+    completed: false,
+  });
+  
+  await saveDB(db);
+  
+  // TODO: Send push notification if user has subscription
+  await sendPushNotification(toUser.userId, {
+    title: `New Challenge from ${fromUser.username}!`,
+    body: `${fromUser.username} sent you a Wordle challenge`,
+    icon: fromUser.avatar,
+  });
+  
+  return { success: true, toUserId: toUser.userId };
+}
+
+async function getUserChallenges(userId: string) {
+  const db = await getDB();
+  return db.userChallenges[userId] || [];
+}
+
+async function markChallengeAsRead(challengeId: string, userId: string) {
+  const db = await getDB();
+  const challenges = db.userChallenges[userId] || [];
+  const challenge = challenges.find((c: any) => c.challengeId === challengeId);
+  if (challenge) {
+    challenge.read = true;
+    await saveDB(db);
+  }
+}
+
+async function markChallengeAsCompleted(challengeId: string, userId: string, result: any) {
+  const db = await getDB();
+  const challenges = db.userChallenges[userId] || [];
+  const challenge = challenges.find((c: any) => c.challengeId === challengeId);
+  if (challenge) {
+    challenge.completed = true;
+    challenge.completedAt = Date.now();
+    challenge.result = result;
+    await saveDB(db);
+    
+    // Notify sender
+    await sendPushNotification(challenge.fromUserId, {
+      title: `Challenge Completed!`,
+      body: `${await getUsername(userId)} completed your challenge`,
+      icon: '🎉',
+    });
+  }
+}
+
+async function getUsername(userId: string): Promise<string> {
+  const user = await getUser(userId);
+  return user?.username || 'Someone';
+}
+
+async function savePushSubscription(userId: string, subscription: any) {
+  const db = await getDB();
+  db.pushSubscriptions[userId] = subscription;
+  await saveDB(db);
+}
+
+async function sendPushNotification(userId: string, payload: any) {
+  const db = await getDB();
+  const subscription = db.pushSubscriptions[userId];
+  
+  if (!subscription) {
+    console.log(`No push subscription for user ${userId}`);
+    return;
+  }
+  
+  // TODO: Implement actual web push using VAPID keys
+  // For now, just log
+  console.log(`Would send push to ${userId}:`, payload);
 }
 
 // In-memory storage for active connections
@@ -321,6 +474,191 @@ export default {
     // Handle preflight requests
     if (req.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
+    }
+    
+    // GET /api/users - Get all users
+    if (req.method === "GET" && url.pathname === "/api/users") {
+      try {
+        const users = await getAllUsers();
+        return Response.json(users, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error getting users:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/create - Create new user
+    if (req.method === "POST" && url.pathname === "/api/user/create") {
+      try {
+        const { username, avatar } = await req.json();
+        
+        // Check if username already exists
+        const existing = await getUserByUsername(username);
+        if (existing) {
+          return Response.json(
+            { success: false, error: "Username already taken" },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+        
+        const user = await createUser(username, avatar);
+        return Response.json(user, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error creating user:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // GET /api/user/check/:username - Check if username is available
+    if (req.method === "GET" && url.pathname.match(/^\/api\/user\/check\/.+$/)) {
+      try {
+        const username = decodeURIComponent(url.pathname.split('/').pop() || '');
+        const existing = await getUserByUsername(username);
+        return Response.json(
+          { available: !existing },
+          { headers: corsHeaders }
+        );
+      } catch (error) {
+        console.error("Error checking username:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // GET /api/user/:username - Get user by username
+    if (req.method === "GET" && url.pathname.match(/^\/api\/user\/[^\/]+$/) && !url.pathname.includes('/check/') && !url.pathname.includes('/login') && !url.pathname.includes('/challenges')) {
+      try {
+        const username = decodeURIComponent(url.pathname.split('/').pop() || '');
+        const user = await getUserByUsername(username);
+        if (user) {
+          return Response.json(user, { headers: corsHeaders });
+        } else {
+          return Response.json(
+            { success: false, error: "User not found" },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } catch (error) {
+        console.error("Error getting user:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/:userId/login - Login user
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/login$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        await updateUserLastSeen(userId);
+        const user = await getUser(userId);
+        if (user) {
+          return Response.json(user, { headers: corsHeaders });
+        } else {
+          return Response.json(
+            { success: false, error: "User not found" },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } catch (error) {
+        console.error("Error logging in user:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // GET /api/user/:userId/challenges - Get user's received challenges
+    if (req.method === "GET" && url.pathname.match(/^\/api\/user\/[^\/]+\/challenges$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const challenges = await getUserChallenges(userId);
+        return Response.json(challenges, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error getting user challenges:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/challenge/send - Send challenge to user
+    if (req.method === "POST" && url.pathname === "/api/challenge/send") {
+      try {
+        const { fromUserId, toUsername, word, challengeId } = await req.json();
+        const result = await sendChallengeToUser(fromUserId, toUsername, word, challengeId);
+        return Response.json(result, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error sending challenge:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/challenge/:id/read - Mark challenge as read
+    if (req.method === "POST" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/read$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const { userId } = await req.json();
+        await markChallengeAsRead(challengeId, userId);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error marking challenge as read:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/challenge/:id/complete - Mark challenge as completed
+    if (req.method === "POST" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/complete$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const { userId, result } = await req.json();
+        await markChallengeAsCompleted(challengeId, userId, result);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error marking challenge as completed:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/:userId/push-subscribe - Save push subscription
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/push-subscribe$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const subscription = await req.json();
+        await savePushSubscription(userId, subscription);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error("Error saving push subscription:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
     }
     
     // POST /api/challenge - Create a challenge

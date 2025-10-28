@@ -4,17 +4,20 @@ import { Keyboard } from './components/Keyboard';
 import { Boosts } from './components/Boosts';
 import { CalendarPicker } from './components/CalendarPicker';
 import { StartScreen } from './components/StartScreen';
-import { WordChallengeModal } from './components/WordChallengeModal';
+import { SendChallengeModal } from './components/SendChallengeModal';
 import { ResultPlaybackScreen } from './components/ResultPlaybackScreen';
 import { PlaybackView } from './components/PlaybackView';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { CollaborativeMultiplayerGame } from './components/CollaborativeMultiplayerGame';
 import { MyChallengesView } from './components/MyChallengesView';
+import { UserAuthScreen } from './components/UserAuthScreen';
+import { ChallengeInbox } from './components/ChallengeInbox';
 import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { loadBadges, saveBadges, checkForNewBadges, calculateDayStreak } from './services/badgeService';
 import { extractChallengeFromUrl, extractResultFromUrl, WordChallenge, ChallengeResult, encodeChallengeResult, generateResultUrl, submitChallengeCompletion } from './services/challengeService';
+import { getCurrentUser, setCurrentUser as saveCurrentUser, clearCurrentUser, getUnreadChallengeCount, subscribeToPushNotifications, User, markChallengeAsCompleted } from './services/userService';
 import { GameState, GameAction, GameStatus, GameMode, GameModeStats, KeyStatuses, WordOfTheDayCompletion, Badge } from './types';
 import './App.css';
 
@@ -341,6 +344,11 @@ function App() {
   const [showResultShareConfirm, setShowResultShareConfirm] = useState(false);
   const [pendingResultShare, setPendingResultShare] = useState<{url: string, message: string, creatorName?: string} | null>(null);
   const [showMyChallenges, setShowMyChallenges] = useState(false);
+  
+  // User account states
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showInbox, setShowInbox] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -457,9 +465,16 @@ function App() {
         };
 
         // Submit completion to backend
-        submitChallengeCompletion(currentChallenge, result, 'Player').catch(error => {
+        submitChallengeCompletion(currentChallenge, result, currentUser?.username || 'Player').catch(error => {
           console.error('Failed to submit challenge completion:', error);
         });
+
+        // Mark as completed in user's inbox if user is authenticated
+        if (currentUser) {
+          markChallengeAsCompleted(currentChallenge.challengeId, currentUser.userId, result).catch(error => {
+            console.error('Failed to mark challenge as completed in inbox:', error);
+          });
+        }
 
         const resultUrl = generateResultUrl(result);
         console.log('=== RESULT URL GENERATION ===');
@@ -581,6 +596,43 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [state.gameStatus, state.solution, state.stats, state.currentGuessIndex]);
+
+  // Load current user on app mount
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      loadUnreadCount(user.userId);
+      // Optional: subscribe to push notifications
+      subscribeToPushNotifications(user.userId).catch(err => {
+        console.log('Push notifications not enabled:', err);
+      });
+    }
+  }, []);
+
+  // Load unread challenge count
+  const loadUnreadCount = async (userId: string) => {
+    const count = await getUnreadChallengeCount(userId);
+    setUnreadCount(count);
+  };
+
+  // Refresh unread count periodically when user is authenticated
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const interval = setInterval(() => {
+      loadUnreadCount(currentUser.userId);
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  // Handle user authentication
+  const handleUserAuthenticated = (user: User) => {
+    setCurrentUser(user);
+    saveCurrentUser(user);
+    loadUnreadCount(user.userId);
+  };
 
   // Check for challenge URLs on app load
   useEffect(() => {
@@ -1118,6 +1170,16 @@ function App() {
           <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="Sent Challenges">
              <Trophy className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
+          {currentUser && (
+            <button onClick={() => { enableAudio(); setShowInbox(true); }} aria-label="Inbox" className="relative">
+              <Inbox className="h-5 w-5 text-gray-400 hover:text-white" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
           {isMobile && (
             <button onClick={handleDownload} aria-label="Install app">
               <Download className="h-5 w-5 text-gray-400 hover:text-white" />
@@ -1535,14 +1597,41 @@ function App() {
         </div>
       )}
 
-      {/* Word Challenge Modal */}
-      <WordChallengeModal
-        isOpen={showWordChallenge}
-        onClose={() => setShowWordChallenge(false)}
-        onStartChallenge={() => {}} // No longer used since we removed Play Challenge button
-        validWords={wordListsState?.validWords}
-        shareNative={shareNative}
-      />
+      {/* User Authentication Screen */}
+      {!currentUser && <UserAuthScreen onAuthenticated={handleUserAuthenticated} />}
+
+      {/* Send Challenge Modal - only show if user is authenticated */}
+      {currentUser && (
+        <SendChallengeModal
+          isOpen={showWordChallenge}
+          onClose={() => setShowWordChallenge(false)}
+          currentUser={currentUser}
+          validWords={wordListsState?.validWords}
+        />
+      )}
+
+      {/* Challenge Inbox */}
+      {currentUser && showInbox && (
+        <ChallengeInbox
+          user={currentUser}
+          onClose={() => {
+            setShowInbox(false);
+            loadUnreadCount(currentUser.userId); // Refresh count
+          }}
+          onStartChallenge={(challenge) => {
+            setShowInbox(false);
+            setCurrentChallenge(challenge);
+            setShowStartScreen(false);
+            startNewGame(GameMode.Unlimited).then(() => {
+              if (wordLists.current) {
+                wordLists.current.validWords.add(challenge.word);
+                setWordListsState({ ...wordLists.current });
+              }
+              dispatch({ type: 'START_GAME', payload: { solution: challenge.word, gameMode: GameMode.Unlimited } });
+            });
+          }}
+        />
+      )}
 
       {/* Result Share Confirmation Modal */}
       {showResultShareConfirm && pendingResultShare && (
@@ -1651,6 +1740,13 @@ const Download = createIcon(
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7,10 12,15 17,10" />
         <line x1="12" y1="15" x2="12" y2="3" />
+    </>
+);
+
+const Inbox = createIcon(
+    <>
+        <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
     </>
 );
 
