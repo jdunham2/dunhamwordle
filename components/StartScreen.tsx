@@ -1,18 +1,20 @@
 import React from 'react';
-import { Calendar, Play, BarChart3, Users } from 'lucide-react';
+import { Calendar, Play, BarChart3, Users, Globe } from 'lucide-react';
 
 interface StartScreenProps {
   onStartUnlimited: () => void;
   onStartWordOfTheDay: () => void;
   onShowStats: () => void;
   onPlayWithFriends: () => void;
+  onMultiplayer: () => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
   onStartUnlimited,
   onStartWordOfTheDay,
   onShowStats,
-  onPlayWithFriends
+  onPlayWithFriends,
+  onMultiplayer
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -48,6 +50,14 @@ export const StartScreen: React.FC<StartScreenProps> = ({
           >
             <Users className="h-6 w-6" />
             Play with Friends
+          </button>
+
+          <button
+            onClick={onMultiplayer}
+            className="w-full px-6 py-4 bg-orange-600 text-white rounded-lg font-bold text-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-3"
+          >
+            <Globe className="h-6 w-6" />
+            Real-Time Multiplayer
           </button>
 
           <button

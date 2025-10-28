@@ -6,6 +6,7 @@ export interface WordChallenge {
   gameMode: GameMode;
   createdAt: Date;
   challengeId: string;
+  senderName?: string;
 }
 
 export interface ChallengeResult {
@@ -29,7 +30,8 @@ export function encodeWordChallenge(challenge: WordChallenge): string {
     g: challenge.guesses,
     m: challenge.gameMode,
     t: challenge.createdAt.getTime(),
-    i: challenge.challengeId
+    i: challenge.challengeId,
+    n: challenge.senderName
   };
 
   return btoa(JSON.stringify(data))
@@ -60,7 +62,8 @@ export function decodeWordChallenge(encoded: string): WordChallenge | null {
       guesses: data.g || [],
       gameMode: data.m || GameMode.Unlimited,
       createdAt: new Date(data.t),
-      challengeId: data.i || generateChallengeId()
+      challengeId: data.i || generateChallengeId(),
+      senderName: data.n
     };
   } catch (error) {
     console.error('Failed to decode word challenge:', error);
@@ -117,13 +120,14 @@ export function decodeChallengeResult(encoded: string): ChallengeResult | null {
 }
 
 // Create a new word challenge
-export function createWordChallenge(word: string, gameMode: GameMode = GameMode.Unlimited): WordChallenge {
+export function createWordChallenge(word: string, gameMode: GameMode = GameMode.Unlimited, senderName?: string): WordChallenge {
   return {
     word: word.toUpperCase(),
     guesses: [],
     gameMode,
     createdAt: new Date(),
-    challengeId: generateChallengeId()
+    challengeId: generateChallengeId(),
+    senderName
   };
 }
 

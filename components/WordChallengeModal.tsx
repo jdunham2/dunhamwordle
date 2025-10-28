@@ -18,6 +18,7 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
   shareNative
 }) => {
   const [customWord, setCustomWord] = useState('');
+  const [senderName, setSenderName] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [hasShared, setHasShared] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
     setIsValidating(true);
 
     try {
-      const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited);
+      const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited, senderName.trim() || undefined);
       const url = generateChallengeUrl(challenge);
       setShareUrl(url);
 
@@ -88,7 +89,7 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
       setHasShared(true);
     } catch (error) {
       // Final fallback for older browsers
-      const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited);
+      const challenge = createWordChallenge(customWord.toUpperCase(), GameMode.Unlimited, senderName.trim() || undefined);
       const url = generateChallengeUrl(challenge);
       setShareUrl(url);
 
@@ -120,6 +121,21 @@ export const WordChallengeModal: React.FC<WordChallengeModalProps> = ({
             <p className="text-center text-gray-400 mb-4">Create a custom word and share it!</p>
 
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Your name (optional):
+                </label>
+                <input
+                  type="text"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  maxLength={20}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-100 text-center"
+                  placeholder="Your name"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Enter a 5-letter word:

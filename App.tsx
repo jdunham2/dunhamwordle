@@ -7,6 +7,9 @@ import { StartScreen } from './components/StartScreen';
 import { WordChallengeModal } from './components/WordChallengeModal';
 import { ResultPlaybackScreen } from './components/ResultPlaybackScreen';
 import { PlaybackView } from './components/PlaybackView';
+import { MultiplayerLobby } from './components/MultiplayerLobby';
+import { CollaborativeMultiplayerGame } from './components/CollaborativeMultiplayerGame';
+import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
 import { loadBadges, saveBadges, checkForNewBadges, calculateDayStreak } from './services/badgeService';
@@ -329,6 +332,11 @@ function App() {
   const [showResultPlayback, setShowResultPlayback] = useState(false);
   const [showPlaybackView, setShowPlaybackView] = useState(false);
   const [wordListsState, setWordListsState] = useState<{ solutions: string[]; validWords: Set<string> } | null>(null);
+  const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
+  const [showMultiplayerGame, setShowMultiplayerGame] = useState(false);
+  const [multiplayerRoomId, setMultiplayerRoomId] = useState('');
+  const [isMultiplayerHost, setIsMultiplayerHost] = useState(false);
+  const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -835,6 +843,35 @@ function App() {
     setShowWordChallenge(true);
   };
 
+  const handleMultiplayer = () => {
+    setShowStartScreen(false);
+    setShowMultiplayerLobby(true);
+  };
+
+  const handleRoomCreated = (roomId: string, isHost: boolean, playerName: string) => {
+    setMultiplayerRoomId(roomId);
+    setIsMultiplayerHost(isHost);
+    setMultiplayerPlayerName(playerName);
+    setShowMultiplayerLobby(false);
+    setShowMultiplayerGame(true);
+  };
+
+  const handleRoomJoined = (roomId: string, isHost: boolean, playerName: string) => {
+    setMultiplayerRoomId(roomId);
+    setIsMultiplayerHost(isHost);
+    setMultiplayerPlayerName(playerName);
+    setShowMultiplayerLobby(false);
+    setShowMultiplayerGame(true);
+  };
+
+  const handleMultiplayerExit = () => {
+    setShowMultiplayerGame(false);
+    setShowMultiplayerLobby(false);
+    setShowStartScreen(true);
+    setMultiplayerRoomId('');
+    setIsMultiplayerHost(false);
+  };
+
   // Confetti celebration function
   const triggerCelebration = (guessCount: number) => {
     // Play audio celebration
@@ -985,7 +1022,7 @@ function App() {
     <div className="flex flex-col h-screen max-w-lg mx-auto p-2 sm:p-4 font-sans overflow-hidden lg:justify-center" style={{ height: '100dvh' }}>
       <div ref={announcementsRef} className="absolute w-1 h-1 -m-1 overflow-hidden p-0 border-0" style={{ clip: 'rect(0,0,0,0)' }} aria-live="assertive"></div>
 
-      {!showPlaybackView && (
+      {!showPlaybackView && !showMultiplayerGame && (
         <header className="flex items-center justify-between border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
         <div className="flex items-center gap-2">
           <button onClick={() => { enableAudio(); setShowHelp(true); }} aria-label="How to play">
@@ -1033,7 +1070,7 @@ function App() {
 
       {/* IMPORTANT: Layout spacing rules - DO NOT CHANGE without explicit request */}
       {/* mb-4: Fixed 16px gap between grid and keyboard (not flexible spacing) */}
-      {!showPlaybackView && (
+      {!showPlaybackView && !showMultiplayerGame && (
         <main className="flex flex-col items-center relative flex-shrink-0 mb-4">
          {state.error && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-50 bg-orange-800 text-white font-bold py-2 px-4 rounded-md animate-shake whitespace-nowrap">
@@ -1058,7 +1095,7 @@ function App() {
         </main>
       )}
 
-      {!showPlaybackView && (
+      {!showPlaybackView && !showMultiplayerGame && (
         <div className="flex-shrink-0">
           <Boosts
             onReveal={handleRevealBoost}
@@ -1069,7 +1106,7 @@ function App() {
         </div>
       )}
 
-      {!showPlaybackView && (
+      {!showPlaybackView && !showMultiplayerGame && (
         <div className="flex-shrink-0">
           <Keyboard onKeyPress={handleKeyPress} keyStatuses={state.keyStatuses} exploded={gameExploded} />
         </div>
@@ -1256,6 +1293,28 @@ function App() {
           onStartWordOfTheDay={handleStartWordOfTheDay}
           onShowStats={handleShowStats}
           onPlayWithFriends={handlePlayWithFriends}
+          onMultiplayer={handleMultiplayer}
+        />
+      )}
+
+      {/* Only show Lobby when needed, don't keep in DOM */}
+      {showMultiplayerLobby && (
+        <MultiplayerLobby
+          onRoomCreated={handleRoomCreated}
+          onRoomJoined={handleRoomJoined}
+          onBack={() => {
+            setShowMultiplayerLobby(false);
+            setShowStartScreen(true);
+          }}
+        />
+      )}
+
+      {showMultiplayerGame && (
+        <CollaborativeMultiplayerGame
+          roomId={multiplayerRoomId}
+          isHost={isMultiplayerHost}
+          playerName={multiplayerPlayerName}
+          onExit={handleMultiplayerExit}
         />
       )}
 

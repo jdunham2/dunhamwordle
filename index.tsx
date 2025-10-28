@@ -27,7 +27,10 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <React.StrictMode>
+  // NOTE: StrictMode disabled for multiplayer development
+  // It causes duplicate connections that break WebRTC handshake
+  // Re-enable after implementing single-component multiplayer
+  // <React.StrictMode>
     <App />
-  </React.StrictMode>
+  // </React.StrictMode>
 );
