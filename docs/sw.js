@@ -12,7 +12,7 @@ const coreUrlsToCache = [
 
 // Dynamic asset files (updated on each build)
 const assetFiles = [
-  "./assets/index-BbK-ewyV.js",
+  "./assets/index-BdAHnlkI.js",
   "./assets/index-BwvGxbNA.css"
 ];
 

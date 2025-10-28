@@ -106,6 +106,8 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
   };
 
 const handleSentChallengeClick = (challenge: (SentChallenge & { completions: number; completionDetails: any[] })) => {
+    console.log('[ChallengesView] handleSentChallengeClick called with:', { completions: challenge.completions, completionDetailsLength: challenge.completionDetails?.length });
+    
     if (challenge.completions > 0 && challenge.completionDetails.length > 0) {
       // Get the first completion's replay URL
       const firstCompletion = challenge.completionDetails[0];
@@ -132,8 +134,11 @@ const handleSentChallengeClick = (challenge: (SentChallenge & { completions: num
           createdAt: firstCompletion.completedAt ? new Date(firstCompletion.completedAt) : new Date()
         };
         const replayUrl = generateResultUrl(result);
+        console.log('[ChallengesView] Generated replay URL:', replayUrl);
         window.open(replayUrl, '_blank');
       }
+    } else {
+      console.log('[ChallengesView] No completions to view replay for');
     }
   };
 
