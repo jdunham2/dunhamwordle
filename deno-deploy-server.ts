@@ -1084,8 +1084,17 @@ export default {
       try {
         const pathParts = url.pathname.split('/');
         const challengeId = pathParts[3];
-        const completion = await req.json();
-        await addCompletion({ ...completion, challengeId });
+        const data = await req.json();
+        
+        // Handle both formats: new (with completerName) and old (with userId)
+        if (data.userId && data.result) {
+          // Old format - mark as completed in user's inbox
+          await markChallengeAsCompleted(challengeId, data.userId, data.result);
+        } else {
+          // New format - add to completions list
+          await addCompletion({ ...data, challengeId });
+        }
+        
         return Response.json({ success: true }, { headers: corsHeaders });
       } catch (error) {
         console.error("Error submitting completion:", error);
