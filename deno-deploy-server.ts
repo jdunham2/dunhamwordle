@@ -311,15 +311,33 @@ export default {
     // HTTP API endpoints
     const url = new URL(req.url);
     
+    // CORS headers for all HTTP requests
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+    
+    // Handle preflight requests
+    if (req.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
+    
     // POST /api/challenge - Create a challenge
     if (req.method === "POST" && url.pathname === "/api/challenge") {
       try {
         const challenge = await req.json();
         await addChallenge(challenge);
-        return Response.json({ success: true, challengeId: challenge.challengeId });
+        return Response.json(
+          { success: true, challengeId: challenge.challengeId },
+          { headers: corsHeaders }
+        );
       } catch (error) {
         console.error("Error creating challenge:", error);
-        return Response.json({ success: false, error: String(error) }, { status: 500 });
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
       }
     }
     
@@ -330,10 +348,13 @@ export default {
         const challengeId = pathParts[3];
         const completion = await req.json();
         await addCompletion({ ...completion, challengeId });
-        return Response.json({ success: true });
+        return Response.json({ success: true }, { headers: corsHeaders });
       } catch (error) {
         console.error("Error submitting completion:", error);
-        return Response.json({ success: false, error: String(error) }, { status: 500 });
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
       }
     }
     
@@ -343,10 +364,13 @@ export default {
         const pathParts = url.pathname.split('/');
         const challengeId = pathParts[3];
         const completions = await getChallengeCompletions(challengeId);
-        return Response.json({ success: true, completions });
+        return Response.json({ success: true, completions }, { headers: corsHeaders });
       } catch (error) {
         console.error("Error getting completions:", error);
-        return Response.json({ success: false, error: String(error) }, { status: 500 });
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
       }
     }
     
@@ -369,7 +393,7 @@ export default {
         totalChallenges,
         totalCompletions,
         timestamp: new Date().toISOString(),
-      });
+      }, { headers: corsHeaders });
     }
 
     return new Response("Dunham Wordle WebSocket Server\n\nUpgrade to WebSocket to connect.", {
