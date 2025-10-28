@@ -137,13 +137,15 @@ export function createWordChallenge(word: string, gameMode: GameMode = GameMode.
 // Generate shareable URL for a challenge
 export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.origin): string {
   const encoded = encodeWordChallenge(challenge);
-  return `${baseUrl}/challenge?c=${encoded}`;
+  // Use query param only for GitHub Pages compatibility (no path routing)
+  return `${baseUrl}/dunhamwordle/?c=${encoded}`;
 }
 
 // Generate shareable URL for a challenge result
 export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.origin): string {
   const encoded = encodeChallengeResult(result);
-  return `${baseUrl}/result?r=${encoded}`;
+  // Use query param only for GitHub Pages compatibility (no path routing)
+  return `${baseUrl}/dunhamwordle/?r=${encoded}`;
 }
 
 // Extract challenge from URL parameters (supports both old and new formats)

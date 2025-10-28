@@ -533,14 +533,13 @@ function App() {
 
   useEffect(() => {
     // Dynamic page title based on URL type
-    const pathname = window.location.pathname;
     const urlParams = new URLSearchParams(window.location.search);
     
-    if (pathname.includes('/challenge') || urlParams.has('c') || urlParams.has('challenge')) {
+    if (urlParams.has('c') || urlParams.has('challenge')) {
       const challenge = extractChallengeFromUrl();
       const creatorName = challenge?.senderName || 'Friend';
       document.title = `Challenge from ${creatorName} - Dunham Wordle`;
-    } else if (pathname.includes('/result') || urlParams.has('r') || urlParams.has('result')) {
+    } else if (urlParams.has('r') || urlParams.has('result')) {
       const result = extractResultFromUrl();
       document.title = result?.solved ? "Challenge Completed! - Dunham Wordle" : "Challenge Result - Dunham Wordle";
     } else if (state.gameStatus === GameStatus.Won) {
