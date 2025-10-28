@@ -1636,51 +1636,6 @@ function App() {
       )}
 
 
-      {/* Result Share Confirmation Modal */}
-      {showResultShareConfirm && pendingResultShare && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={handleSkipResultShare}>
-          <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative" onClick={(e) => e.stopPropagation()}>
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-white" onClick={handleSkipResultShare} aria-label="Close">
-              <X className="h-6 w-6"/>
-            </button>
-            
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold mb-2">Challenge Complete!</h2>
-              <p className="text-gray-300">
-                You just completed {pendingResultShare.creatorName}'s challenge!
-              </p>
-            </div>
-
-            <div className="bg-zinc-700 p-4 rounded-lg mb-6">
-              <p className="text-sm text-gray-300 mb-2">
-                <strong>Share your results</strong> with {pendingResultShare.creatorName}!
-              </p>
-              <p className="text-xs text-gray-400 mb-2">
-                A share dialog will open where you can send your results.
-              </p>
-              <p className="text-xs text-blue-400">
-                {pendingResultShare.creatorName} can see your completion in their "Sent Challenges" page
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleShareResult}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-              >
-                Share My Results
-              </button>
-              <button
-                onClick={handleSkipResultShare}
-                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* My Challenges View */}
       {showChallenges && currentUser && (
