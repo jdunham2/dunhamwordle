@@ -9,6 +9,7 @@ import { ResultPlaybackScreen } from './components/ResultPlaybackScreen';
 import { PlaybackView } from './components/PlaybackView';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { CollaborativeMultiplayerGame } from './components/CollaborativeMultiplayerGame';
+import { MyChallengesView } from './components/MyChallengesView';
 import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
@@ -339,6 +340,7 @@ function App() {
   const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
   const [showResultShareConfirm, setShowResultShareConfirm] = useState(false);
   const [pendingResultShare, setPendingResultShare] = useState<{url: string, message: string, creatorName?: string} | null>(null);
+  const [showMyChallenges, setShowMyChallenges] = useState(false);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -863,7 +865,13 @@ function App() {
     setShowMultiplayerGame(false);
     setShowPlaybackView(false);
     setShowResultShareConfirm(false);
+    setShowMyChallenges(false);
     setShowStartScreen(true);
+  };
+
+  const handleMyChallenges = () => {
+    setShowStartScreen(false);
+    setShowMyChallenges(true);
   };
 
   const handleShareResult = async () => {
@@ -1106,6 +1114,9 @@ function App() {
           setShowWordChallenge(true);
         }} aria-label="Create word challenge">
              <Share2 className="h-5 w-5 text-gray-400 hover:text-white" />
+          </button>
+          <button onClick={() => { enableAudio(); handleMyChallenges(); }} aria-label="My Challenges">
+             <Trophy className="h-5 w-5 text-gray-400 hover:text-white" />
           </button>
           {isMobile && (
             <button onClick={handleDownload} aria-label="Install app">
@@ -1551,10 +1562,13 @@ function App() {
 
             <div className="bg-zinc-700 p-4 rounded-lg mb-6">
               <p className="text-sm text-gray-300 mb-2">
-                <strong>Share your results</strong> with {pendingResultShare.creatorName} so they know you completed it!
+                <strong>Share your results</strong> with {pendingResultShare.creatorName}!
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 mb-2">
                 A share dialog will open where you can send your results.
+              </p>
+              <p className="text-xs text-blue-400">
+                {pendingResultShare.creatorName} can see your completion in their "My Challenges" page
               </p>
             </div>
 
@@ -1572,12 +1586,13 @@ function App() {
                 Skip
               </button>
             </div>
-
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Note: {pendingResultShare.creatorName} won't be notified if you skip
-            </p>
           </div>
         </div>
+      )}
+
+      {/* My Challenges View */}
+      {showMyChallenges && (
+        <MyChallengesView onClose={() => setShowMyChallenges(false)} />
       )}
 
       {/* Static SEO content section */}
@@ -1664,6 +1679,17 @@ const Share2 = createIcon(
         <circle cx="18" cy="19" r="3" />
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
         <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </>
+);
+
+const Trophy = createIcon(
+    <>
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+        <path d="M4 22h16" />
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
     </>
 );
 

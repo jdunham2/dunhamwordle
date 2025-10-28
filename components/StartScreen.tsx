@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Play, BarChart3, Users, Globe } from 'lucide-react';
+import { Calendar, Play, BarChart3, Users, Globe, Trophy } from 'lucide-react';
 
 interface StartScreenProps {
   onStartUnlimited: () => void;
@@ -7,6 +7,7 @@ interface StartScreenProps {
   onShowStats: () => void;
   onPlayWithFriends: () => void;
   onMultiplayer: () => void;
+  onMyChallenges: () => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
@@ -14,7 +15,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onStartWordOfTheDay,
   onShowStats,
   onPlayWithFriends,
-  onMultiplayer
+  onMultiplayer,
+  onMyChallenges
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -50,6 +52,14 @@ export const StartScreen: React.FC<StartScreenProps> = ({
           >
             <Users className="h-6 w-6" />
             Play with Friends
+          </button>
+
+          <button
+            onClick={onMyChallenges}
+            className="w-full px-6 py-4 bg-yellow-600 text-white rounded-lg font-bold text-lg hover:bg-yellow-700 transition-colors flex items-center justify-center gap-3"
+          >
+            <Trophy className="h-6 w-6" />
+            My Challenges
           </button>
 
           <button

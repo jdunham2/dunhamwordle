@@ -134,18 +134,26 @@ export function createWordChallenge(word: string, gameMode: GameMode = GameMode.
   };
 }
 
+// Get the base path for the app (handles GitHub Pages deployment)
+export function getBasePath(): string {
+  // In production on GitHub Pages, use /dunhamwordle
+  // In development, use root /
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  return isDev ? '' : '/dunhamwordle';
+}
+
 // Generate shareable URL for a challenge
 export function generateChallengeUrl(challenge: WordChallenge, baseUrl: string = window.location.origin): string {
   const encoded = encodeWordChallenge(challenge);
-  // Use query param only for GitHub Pages compatibility (no path routing)
-  return `${baseUrl}/dunhamwordle/?c=${encoded}`;
+  const basePath = getBasePath();
+  return `${baseUrl}${basePath}/?c=${encoded}`;
 }
 
 // Generate shareable URL for a challenge result
 export function generateResultUrl(result: ChallengeResult, baseUrl: string = window.location.origin): string {
   const encoded = encodeChallengeResult(result);
-  // Use query param only for GitHub Pages compatibility (no path routing)
-  return `${baseUrl}/dunhamwordle/?r=${encoded}`;
+  const basePath = getBasePath();
+  return `${baseUrl}${basePath}/?r=${encoded}`;
 }
 
 // Extract challenge from URL parameters (supports both old and new formats)
@@ -182,6 +190,31 @@ export function extractResultFromUrl(): ChallengeResult | null {
   return null;
 }
 
+// LocalStorage key for tracking created challenges
+const MY_CHALLENGES_KEY = 'dunhamwordle_my_challenges';
+
+// Store a challenge ID in localStorage
+export function saveMyChallenge(challengeId: string, word: string, senderName: string, createdAt: number): void {
+  try {
+    const challenges = getMyChallenges();
+    challenges.push({ challengeId, word, senderName, createdAt });
+    localStorage.setItem(MY_CHALLENGES_KEY, JSON.stringify(challenges));
+  } catch (error) {
+    console.error('[Challenge] Error saving to localStorage:', error);
+  }
+}
+
+// Get all my created challenges from localStorage
+export function getMyChallenges(): Array<{ challengeId: string; word: string; senderName: string; createdAt: number }> {
+  try {
+    const stored = localStorage.getItem(MY_CHALLENGES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('[Challenge] Error reading from localStorage:', error);
+    return [];
+  }
+}
+
 // Store a challenge on the backend
 export async function storeChallengeOnBackend(challenge: WordChallenge): Promise<boolean> {
   try {
@@ -209,6 +242,15 @@ export async function storeChallengeOnBackend(challenge: WordChallenge): Promise
     }
 
     console.log('[Challenge] Challenge stored successfully:', challenge.challengeId);
+    
+    // Save to localStorage for "My Challenges" tracking
+    saveMyChallenge(
+      challenge.challengeId,
+      challenge.word,
+      challenge.senderName || 'Me',
+      challenge.createdAt.getTime()
+    );
+    
     return true;
   } catch (error) {
     console.error('[Challenge] Error storing challenge:', error);
