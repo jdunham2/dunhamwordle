@@ -53,10 +53,19 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
 
   const loadUsers = async () => {
     setLoading(true);
-    const allUsers = await getAllUsers();
-    setUsers(allUsers);
-    setFilteredUsers(allUsers);
-    setLoading(false);
+    try {
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
+      setFilteredUsers(allUsers);
+      console.log(`[UserAuth] Loaded ${allUsers.length} users`);
+    } catch (error) {
+      console.error('[UserAuth] Failed to load users:', error);
+      // If backend fails, still allow the UI to work with empty state
+      setUsers([]);
+      setFilteredUsers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUserClick = async (user: User) => {
