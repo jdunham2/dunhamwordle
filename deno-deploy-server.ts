@@ -530,10 +530,12 @@ export default {
     // HTTP API endpoints
     const url = new URL(req.url);
     
+    console.log(`[HTTP] ${req.method} ${url.pathname}`);
+    
     // CORS headers for all HTTP requests
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
     
