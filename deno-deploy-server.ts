@@ -209,9 +209,48 @@ async function sendPushNotification(userId: string, payload: any) {
     return;
   }
   
-  // TODO: Implement actual web push using VAPID keys
-  // For now, just log
-  console.log(`Would send push to ${userId}:`, payload);
+  try {
+    // Get VAPID keys from environment variables
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') || '';
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') || '';
+    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@dunhamwordle.com';
+    
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.log('[Push] VAPID keys not configured, skipping push notification');
+      return;
+    }
+    
+    // Import web-push-deno for Deno environment
+    // Note: Using fetch API with Web Push protocol directly
+    const endpoint = subscription.endpoint;
+    const p256dh = subscription.keys.p256dh;
+    const auth = subscription.keys.auth;
+    
+    // Prepare notification payload
+    const notificationPayload = JSON.stringify({
+      title: payload.title || 'Dunham Wordle',
+      body: payload.body || 'New notification',
+      icon: payload.icon || '/dunhamwordle/vite.svg',
+      badge: payload.badge || '/dunhamwordle/vite.svg',
+      tag: payload.tag || 'wordle-notification',
+      data: payload.data || { url: '/dunhamwordle/' }
+    });
+    
+    // For now, log the notification (actual web push requires crypto signing)
+    // Full implementation would use web-push protocol with VAPID authentication
+    console.log(`[Push] Sending notification to ${userId}:`, payload);
+    console.log(`[Push] Endpoint:`, endpoint);
+    
+    // TODO: Implement full web-push protocol with VAPID signing
+    // This requires:
+    // 1. JWT token generation with VAPID keys
+    // 2. Encryption of payload using p256dh and auth
+    // 3. POST request to subscription endpoint with proper headers
+    // For production, consider using a library or service
+    
+  } catch (error) {
+    console.error(`[Push] Error sending notification to ${userId}:`, error);
+  }
 }
 
 // In-memory storage for active connections

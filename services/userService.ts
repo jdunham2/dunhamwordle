@@ -264,6 +264,10 @@ export async function getUnreadChallengeCount(userId: string): Promise<number> {
   }
 }
 
+// VAPID public key - get from environment variable or use default
+// @ts-ignore - Vite env variable
+const VAPID_PUBLIC_KEY = import.meta.env?.VITE_VAPID_PUBLIC_KEY || 'BK4hwFJ2sZoAmijTNk-nUtzIeACuZC2tKJbqNoTP2l4aq-EsO_HR7HLf0X_8VWhfsyPza6V2mtaQLP-40NZoJiU';
+
 // Request push notification permission and save subscription
 export async function subscribeToPushNotifications(userId: string): Promise<boolean> {
   try {
@@ -286,9 +290,7 @@ export async function subscribeToPushNotifications(userId: string): Promise<bool
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        'BEl62iUYgUivxIkv69yViEuiBIa-Ib37gp65aOzvtg8qPZZOhbN-5QWgzaI3ZvEQ6wqL9uGOGCZyqR7aYjFeFTU'
-      ),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
     });
 
     // Send subscription to backend
