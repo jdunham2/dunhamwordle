@@ -875,6 +875,72 @@ export default {
       }
     }
     
+    // POST /api/user/:userId/username - Update username
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/username$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const { username } = await req.json();
+        
+        // Check if username is taken by another user
+        const db = await getDB();
+        const existingUser = Object.values(db.users).find((u: any) => 
+          u.username.toLowerCase() === username.toLowerCase() && u.userId !== userId
+        );
+        
+        if (existingUser) {
+          return Response.json(
+            { success: false, error: "Username already taken" },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+        
+        if (db.users[userId]) {
+          db.users[userId].username = username;
+          await saveDB(db);
+          return Response.json({ success: true, user: db.users[userId] }, { headers: corsHeaders });
+        } else {
+          return Response.json(
+            { success: false, error: "User not found" },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } catch (error) {
+        console.error("Error updating username:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
+    // POST /api/user/:userId/avatar - Update avatar
+    if (req.method === "POST" && url.pathname.match(/^\/api\/user\/[^\/]+\/avatar$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const { avatar } = await req.json();
+        
+        const db = await getDB();
+        if (db.users[userId]) {
+          db.users[userId].avatar = avatar;
+          await saveDB(db);
+          return Response.json({ success: true, user: db.users[userId] }, { headers: corsHeaders });
+        } else {
+          return Response.json(
+            { success: false, error: "User not found" },
+            { status: 404, headers: corsHeaders }
+          );
+        }
+      } catch (error) {
+        console.error("Error updating avatar:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
     // POST /api/challenge/send - Send challenge to user
     if (req.method === "POST" && url.pathname === "/api/challenge/send") {
       try {

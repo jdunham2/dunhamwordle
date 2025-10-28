@@ -11,6 +11,7 @@ import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { CollaborativeMultiplayerGame } from './components/CollaborativeMultiplayerGame';
 import { UserAuthScreen } from './components/UserAuthScreen';
 import { ChallengesView } from './components/ChallengesView';
+import { UserAccountMenu } from './components/UserAccountMenu';
 import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
@@ -393,6 +394,7 @@ function App() {
   const [isMultiplayerHost, setIsMultiplayerHost] = useState(false);
   const [multiplayerPlayerName, setMultiplayerPlayerName] = useState('');
   const [showChallenges, setShowChallenges] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   
   // User account states
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -1497,7 +1499,49 @@ function App() {
           onChallenges={handleMyChallenges}
           onMultiplayer={handleMultiplayer}
           onSwitchUser={handleSwitchUser}
+          onAccountMenu={() => setShowAccountMenu(true)}
           unreadChallenges={unreadCount}
+          user={currentUser ? { username: currentUser.username, avatar: currentUser.avatar } : undefined}
+        />
+      )}
+
+      {showAccountMenu && currentUser && (
+        <UserAccountMenu
+          user={currentUser}
+          onUpdateUsername={async (newUsername: string) => {
+            const wsUrl = getWebSocketUrl();
+            const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+            const response = await fetch(`${httpUrl}/api/user/${currentUser.userId}/username`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: newUsername }),
+            });
+            if (response.ok) {
+              const updatedUser = { ...currentUser, username: newUsername };
+              setCurrentUser(updatedUser);
+              saveCurrentUser(updatedUser);
+            } else {
+              throw new Error('Failed to update username');
+            }
+          }}
+          onUpdateAvatar={async (newAvatar: string) => {
+            const wsUrl = getWebSocketUrl();
+            const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+            const response = await fetch(`${httpUrl}/api/user/${currentUser.userId}/avatar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ avatar: newAvatar }),
+            });
+            if (response.ok) {
+              const updatedUser = { ...currentUser, avatar: newAvatar };
+              setCurrentUser(updatedUser);
+              saveCurrentUser(updatedUser);
+            } else {
+              throw new Error('Failed to update avatar');
+            }
+          }}
+          onSignOut={handleSwitchUser}
+          onClose={() => setShowAccountMenu(false)}
         />
       )}
 

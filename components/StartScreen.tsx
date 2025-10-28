@@ -8,7 +8,12 @@ interface StartScreenProps {
   onChallenges: () => void;
   onMultiplayer: () => void;
   onSwitchUser?: () => void;
+  onAccountMenu?: () => void;
   unreadChallenges?: number;
+  user?: {
+    username: string;
+    avatar: string;
+  };
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
@@ -18,14 +23,30 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onChallenges,
   onMultiplayer,
   onSwitchUser,
-  unreadChallenges = 0
+  onAccountMenu,
+  unreadChallenges = 0,
+  user
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full relative text-center">
-        <h1 className="text-4xl font-bold mb-6 text-white tracking-wider">
-          WORDLE
-        </h1>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex-1"></div>
+          <h1 className="text-4xl font-bold text-white tracking-wider flex-1">
+            WORDLE
+          </h1>
+          <div className="flex-1 flex justify-end">
+            {user && onAccountMenu && (
+              <button
+                onClick={onAccountMenu}
+                className="text-4xl hover:scale-110 transition-transform"
+                aria-label="Account menu"
+              >
+                {user.avatar}
+              </button>
+            )}
+          </div>
+        </div>
 
         <p className="text-gray-300 mb-8 text-lg">
           Choose your game mode
@@ -81,15 +102,6 @@ export const StartScreen: React.FC<StartScreenProps> = ({
         <div className="mt-8 text-sm text-gray-400">
           <p>Family-friendly Wordle with boosts and no ads</p>
         </div>
-
-        {onSwitchUser && (
-          <button
-            onClick={onSwitchUser}
-            className="mt-4 text-gray-400 hover:text-white text-sm underline"
-          >
-            Switch User
-          </button>
-        )}
       </div>
     </div>
   );
