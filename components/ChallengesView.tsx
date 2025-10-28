@@ -181,7 +181,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
     });
   };
 
-  const unreadCount = receivedChallenges.filter(c => !c.read).length;
+  const unreadCount = receivedChallenges.filter(c => !c.read && !c.completed).length;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -261,7 +261,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                       <div className="flex-1 cursor-pointer" onClick={() => handleChallengeClick(challenge)}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold">{challenge.fromUsername}</span>
-                          {!challenge.read && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
+                          {!challenge.read && !challenge.completed && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
                           {challenge.completed && <CheckCircle className="h-4 w-4 text-green-400" />}
                         </div>
                         {challenge.completed ? (
