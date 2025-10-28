@@ -79,7 +79,8 @@ export type GameAction =
   | { type: 'SET_CURRENT_GUESS'; payload: string }
   | { type: 'UPDATE_KEY_STATUSES'; payload: KeyStatuses }
   | { type: 'UNLOCK_BADGE'; payload: { badgeId: string; badge: Badge } }
-  | { type: 'UPDATE_DAY_STREAK'; payload: { dayStreak: number; maxDayStreak: number } };
+  | { type: 'UPDATE_DAY_STREAK'; payload: { dayStreak: number; maxDayStreak: number } }
+  | { type: 'LOAD_STATS'; payload: { stats: GameModeStats; wordOfTheDayCompletions: WordOfTheDayCompletion } };
 
 // Add to Home Screen types
 declare global {

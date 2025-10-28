@@ -26,6 +26,8 @@ const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
 const STATS_KEY = 'word-guess-stats';
 const WORD_OF_THE_DAY_COMPLETIONS_KEY = 'word-of-the-day-completions';
+const USER_STATS_PREFIX = 'dunhamwordle_user_stats_';
+const USER_DAILY_PREFIX = 'dunhamwordle_user_daily_';
 const MODAL_ANIMATION_DELAY = 1200; // ms for 5 tiles to flip
 
 // Context for hint tiles to avoid prop drilling through Grid/Row
@@ -97,6 +99,49 @@ const loadWordOfTheDayCompletions = (): WordOfTheDayCompletion => {
 
 const saveWordOfTheDayCompletions = (completions: WordOfTheDayCompletion) => {
   localStorage.setItem(WORD_OF_THE_DAY_COMPLETIONS_KEY, JSON.stringify(completions));
+};
+
+// User-specific stats functions
+const loadUserStats = (userId: string): GameModeStats => {
+  const stored = localStorage.getItem(USER_STATS_PREFIX + userId);
+  const defaultStats = createDefaultStats();
+  
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      return {
+        unlimited: { ...defaultStats, ...parsed.unlimited },
+        wordOfTheDay: { ...defaultStats, ...parsed.wordOfTheDay }
+      };
+    } catch {
+      // Fall back to default
+    }
+  }
+  
+  return {
+    unlimited: createDefaultStats(),
+    wordOfTheDay: createDefaultStats()
+  };
+};
+
+const saveUserStats = (userId: string, stats: GameModeStats) => {
+  localStorage.setItem(USER_STATS_PREFIX + userId, JSON.stringify(stats));
+};
+
+const loadUserDailyCompletions = (userId: string): WordOfTheDayCompletion => {
+  const stored = localStorage.getItem(USER_DAILY_PREFIX + userId);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // Fall back to empty
+    }
+  }
+  return {};
+};
+
+const saveUserDailyCompletions = (userId: string, completions: WordOfTheDayCompletion) => {
+  localStorage.setItem(USER_DAILY_PREFIX + userId, JSON.stringify(completions));
 };
 
 // Word of the Day Algorithm - More random approach
@@ -306,6 +351,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
       };
+    case 'LOAD_STATS':
+      return {
+        ...state,
+        stats: action.payload.stats,
+        wordOfTheDayCompletions: action.payload.wordOfTheDayCompletions
+      };
     default:
       return state;
   }
@@ -403,13 +454,16 @@ function App() {
 
   // Save stats when they change
   useEffect(() => {
-    saveStats(state.stats);
-  }, [state.stats]);
-
-  // Save Word of the Day completions when they change
-  useEffect(() => {
-    saveWordOfTheDayCompletions(state.wordOfTheDayCompletions);
-  }, [state.wordOfTheDayCompletions]);
+    if (currentUser) {
+      // Save to user-specific storage
+      saveUserStats(currentUser.userId, state.stats);
+      saveUserDailyCompletions(currentUser.userId, state.wordOfTheDayCompletions);
+    } else {
+      // Fallback to global storage for non-logged-in users
+      saveStats(state.stats);
+      saveWordOfTheDayCompletions(state.wordOfTheDayCompletions);
+    }
+  }, [state.stats, state.wordOfTheDayCompletions, currentUser]);
 
   // Save badges when they change
   useEffect(() => {
@@ -603,6 +657,18 @@ function App() {
     if (user) {
       setCurrentUser(user);
       loadUnreadCount(user.userId);
+      
+      // Load user-specific stats
+      const userStats = loadUserStats(user.userId);
+      const userDaily = loadUserDailyCompletions(user.userId);
+      dispatch({ 
+        type: 'LOAD_STATS', 
+        payload: { 
+          stats: userStats,
+          wordOfTheDayCompletions: userDaily
+        } 
+      });
+      
       // Optional: subscribe to push notifications
       subscribeToPushNotifications(user.userId).catch(err => {
         console.log('Push notifications not enabled:', err);
@@ -632,6 +698,19 @@ function App() {
     setCurrentUser(user);
     saveCurrentUser(user);
     loadUnreadCount(user.userId);
+    
+    // Load user-specific stats and daily completions
+    const userStats = loadUserStats(user.userId);
+    const userDaily = loadUserDailyCompletions(user.userId);
+    
+    // Update state with user-specific data
+    dispatch({ 
+      type: 'LOAD_STATS', 
+      payload: { 
+        stats: userStats,
+        wordOfTheDayCompletions: userDaily
+      } 
+    });
   };
 
   // Check for challenge URLs on app load

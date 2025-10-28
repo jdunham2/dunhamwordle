@@ -62,3 +62,71 @@ self.addEventListener('activate', (event) => {
     })
   );
 });
+
+// Push notification handlers
+self.addEventListener('push', (event) => {
+  console.log('[Service Worker] Push Received:', event);
+  
+  let notificationData = {
+    title: 'Dunham Wordle',
+    body: 'You have a new notification',
+    icon: '/dunhamwordle/vite.svg',
+    badge: '/dunhamwordle/vite.svg',
+    tag: 'wordle-notification',
+    requireInteraction: false
+  };
+  
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        tag: data.tag || notificationData.tag,
+        requireInteraction: data.requireInteraction || false,
+        data: data.data || {}
+      };
+    } catch (err) {
+      console.error('[Service Worker] Error parsing push data:', err);
+    }
+  }
+  
+  const promiseChain = self.registration.showNotification(
+    notificationData.title,
+    {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      requireInteraction: notificationData.requireInteraction,
+      data: notificationData.data
+    }
+  );
+  
+  event.waitUntil(promiseChain);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Service Worker] Notification clicked:', event);
+  event.notification.close();
+  
+  const urlToOpen = event.notification.data?.url || '/dunhamwordle/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window open
+        for (let client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If not, open a new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
