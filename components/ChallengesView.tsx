@@ -31,12 +31,19 @@ interface SentChallenge {
   toAvatar: string;
   word: string;
   sentAt: number;
+  completions?: Array<{
+    completerName: string;
+    solved: boolean;
+    attempts: number;
+    completedAt: number;
+    result?: string;
+  }>;
 }
 
 export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, onStartChallenge, onCreateNew }) => {
   const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
   const [receivedChallenges, setReceivedChallenges] = useState<ReceivedChallenge[]>([]);
-  const [sentChallenges, setSentChallenges] = useState<(SentChallenge & { completions: number })[]>([]);
+  const [sentChallenges, setSentChallenges] = useState<(SentChallenge & { completions: number; completionDetails: any[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedChallenge, setExpandedChallenge] = useState<string | null>(null);
 
@@ -58,13 +65,14 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
         if (response.ok) {
           const sent: SentChallenge[] = await response.json();
           
-          // Load completion counts for each sent challenge
+          // Load completion counts and details for each sent challenge
           const withCompletions = await Promise.all(
             sent.map(async (c) => {
-              const completions = await getChallengeCompletions(c.challengeId);
+              const completionData = await getChallengeCompletions(c.challengeId);
               return {
                 ...c,
-                completions: completions.length,
+                completions: completionData.length,
+                completionDetails: completionData,
               };
             })
           );
@@ -78,6 +86,17 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
     }
     
     setLoading(false);
+  };
+
+  const handleSentChallengeClick = (challenge: (SentChallenge & { completions: number; completionDetails: any[] })) => {
+    if (challenge.completions > 0 && challenge.completionDetails.length > 0) {
+      // Get the first completion's replay URL
+      const firstCompletion = challenge.completionDetails[0];
+      if (firstCompletion.result) {
+        const replayUrl = generateResultUrl(firstCompletion.result);
+        window.open(replayUrl, '_blank');
+      }
+    }
   };
 
   const handleChallengeClick = async (challenge: ReceivedChallenge) => {
@@ -200,7 +219,11 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                           {!challenge.read && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
                           {challenge.completed && <CheckCircle className="h-4 w-4 text-green-400" />}
                         </div>
-                        <div className="text-2xl font-bold text-green-400 mb-1">{challenge.word}</div>
+                        {challenge.completed ? (
+                          <div className="text-2xl font-bold text-green-400 mb-1">{challenge.word}</div>
+                        ) : (
+                          <div className="text-2xl font-bold text-gray-500 mb-1">?????</div>
+                        )}
                         <div className="flex items-center gap-3 text-sm text-gray-400">
                           <Clock className="h-4 w-4" />
                           {formatDate(challenge.sentAt)}
@@ -227,7 +250,10 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                 {sentChallenges.map((challenge) => (
                   <div
                     key={challenge.challengeId}
-                    className="bg-zinc-700 rounded-lg p-4 hover:bg-zinc-600 transition-colors"
+                    onClick={() => handleSentChallengeClick(challenge)}
+                    className={`bg-zinc-700 rounded-lg p-4 hover:bg-zinc-600 transition-colors ${
+                      challenge.completions > 0 ? 'cursor-pointer' : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div>
@@ -244,7 +270,7 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
                         </div>
                         {challenge.completions > 0 && (
                           <div className="mt-2 text-sm text-blue-400">
-                            {challenge.completions} completion{challenge.completions !== 1 ? 's' : ''}
+                            {challenge.completions} completion{challenge.completions !== 1 ? 's' : ''} - Click to view replay
                           </div>
                         )}
                       </div>
