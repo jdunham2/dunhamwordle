@@ -156,28 +156,28 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4 z-50">
-      <div className="bg-zinc-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-zinc-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] my-auto overflow-hidden flex flex-col">
         {/* Header */}
-        <div className={`p-6 text-center ${adminMode ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
+        <div className={`p-4 sm:p-6 text-center ${adminMode ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
           {adminMode ? (
             <>
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Shield className="h-8 w-8" />
-                <h1 className="text-4xl font-bold">Admin Mode</h1>
+                <Shield className="h-6 w-6 sm:h-8 sm:w-8" />
+                <h1 className="text-2xl sm:text-4xl font-bold">Admin Mode</h1>
               </div>
-              <p className="text-red-100">Select users to delete • {selectedUsers.size} selected</p>
+              <p className="text-red-100 text-sm sm:text-base">Select users to delete • {selectedUsers.size} selected</p>
             </>
           ) : (
             <>
-              <h1 className="text-4xl font-bold mb-2">Welcome to Dunham Wordle</h1>
-              <p className="text-blue-100">Sign in or create an account to start playing</p>
+              <h1 className="text-2xl sm:text-4xl font-bold mb-2">Welcome to Dunham Wordle</h1>
+              <p className="text-blue-100 text-sm sm:text-base">Sign in or create an account to start playing</p>
             </>
           )}
         </div>
 
         {/* Search Bar */}
-        <div className="p-6 border-b border-zinc-700">
+        <div className="p-4 sm:p-6 border-b border-zinc-700">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
@@ -202,7 +202,7 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
         </div>
 
         {/* User Grid / Create New */}
-        <div className="p-6 overflow-y-auto max-h-[500px]">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
@@ -211,10 +211,10 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
           ) : showCreateNew ? (
             /* Create New User Card */
             <div className="max-w-md mx-auto">
-              <div className="bg-zinc-700 rounded-xl p-8 text-center border-2 border-dashed border-blue-500">
-                <UserPlus className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Create New Account</h3>
-                <p className="text-gray-400 mb-6">
+              <div className="bg-zinc-700 rounded-xl p-4 sm:p-8 text-center border-2 border-dashed border-blue-500">
+                <UserPlus className="h-12 w-12 sm:h-16 sm:w-16 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">Create New Account</h3>
+                <p className="text-gray-400 mb-6 text-sm sm:text-base">
                   Username: <span className="font-semibold text-white">{searchTerm}</span>
                 </p>
                 
@@ -223,12 +223,12 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
                   <label className="block text-sm font-medium text-gray-300 mb-3">
                     Choose Your Avatar
                   </label>
-                  <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto p-2 bg-zinc-800 rounded-lg">
+                  <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-48 overflow-y-auto p-2 bg-zinc-800 rounded-lg">
                     {AVATARS.map((avatar) => (
                       <button
                         key={avatar}
                         onClick={() => setSelectedAvatar(avatar)}
-                        className={`text-3xl p-2 rounded-lg transition-all hover:scale-110 ${
+                        className={`text-2xl sm:text-3xl p-1 sm:p-2 rounded-lg transition-all hover:scale-110 ${
                           selectedAvatar === avatar
                             ? 'bg-blue-600 ring-2 ring-blue-400'
                             : 'bg-zinc-700 hover:bg-zinc-600'
@@ -316,19 +316,19 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
 
         {/* Footer */}
         {!showCreateNew && filteredUsers.length > 0 && (
-          <div className="p-6 border-t border-zinc-700 bg-zinc-750">
+          <div className="p-4 sm:p-6 border-t border-zinc-700 bg-zinc-750">
             {adminMode ? (
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl transition-colors"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl transition-colors text-sm sm:text-base"
                 >
                   Exit Admin Mode
                 </button>
                 <button
                   onClick={handleDeleteUsers}
                   disabled={selectedUsers.size === 0 || deleting}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2 text-sm sm:text-base"
                 >
                   {deleting ? (
                     <>
