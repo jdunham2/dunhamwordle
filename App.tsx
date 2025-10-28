@@ -1448,6 +1448,7 @@ function App() {
           onChallenges={handleMyChallenges}
           onMultiplayer={handleMultiplayer}
           onSwitchUser={handleSwitchUser}
+          unreadChallenges={unreadCount}
         />
       )}
 

@@ -8,6 +8,7 @@ interface StartScreenProps {
   onChallenges: () => void;
   onMultiplayer: () => void;
   onSwitchUser?: () => void;
+  unreadChallenges?: number;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
@@ -16,7 +17,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onShowStats,
   onChallenges,
   onMultiplayer,
-  onSwitchUser
+  onSwitchUser,
+  unreadChallenges = 0
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -48,10 +50,15 @@ export const StartScreen: React.FC<StartScreenProps> = ({
 
           <button
             onClick={onChallenges}
-            className="w-full px-6 py-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-3"
+            className="relative w-full px-6 py-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-3"
           >
             <Trophy className="h-6 w-6" />
             Challenges
+            {unreadChallenges > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                {unreadChallenges > 9 ? '9+' : unreadChallenges}
+              </span>
+            )}
           </button>
 
           <button
