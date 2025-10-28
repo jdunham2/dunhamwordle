@@ -263,11 +263,11 @@ export async function markChallengeAsCompleted(challengeId: string, userId: stri
   }
 }
 
-// Get count of unread challenges
+// Get count of unread challenges (exclude completed ones)
 export async function getUnreadChallengeCount(userId: string): Promise<number> {
   try {
     const challenges = await getUserChallenges(userId);
-    return challenges.filter((c: any) => !c.read).length;
+    return challenges.filter((c: any) => !c.read && !c.completed).length;
   } catch (error) {
     console.error('[User] Error getting unread count:', error);
     return 0;

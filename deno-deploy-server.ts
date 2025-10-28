@@ -239,6 +239,7 @@ async function markChallengeAsCompleted(challengeId: string, userId: string, res
     challenge.completed = true;
     challenge.completedAt = Date.now();
     challenge.result = result;
+    challenge.read = true; // Also mark as read when completed
     await saveDB(db);
     
     // Send WebSocket notification to sender
