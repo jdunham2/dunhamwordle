@@ -705,6 +705,9 @@ function App() {
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  // WebSocket for notifications
+  const notificationSocketRef = useRef<WebSocket | null>(null);
+
   // Handle user authentication
   const handleUserAuthenticated = async (user: User) => {
     setCurrentUser(user);
@@ -730,6 +733,46 @@ function App() {
         wordOfTheDayCompletions: userDaily
       } 
     });
+    
+    // Register WebSocket for notifications
+    const wsUrl = getWebSocketUrl().replace('http://', 'ws://').replace('https://', 'wss://');
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('[Notifications] Connected to WebSocket');
+      ws.send(JSON.stringify({ type: 'register-user', userId: user.userId }));
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'notification') {
+          console.log('[Notifications] Received notification:', data);
+          
+          // Show toast notification
+          if (data.kind === 'new-challenge') {
+            alert(`🎉 New challenge from ${data.fromUsername}!`);
+            loadUnreadCount(user.userId);
+          } else if (data.kind === 'challenge-completed') {
+            alert(`🎉 ${data.completerName} completed your challenge "${data.word}"!`);
+            // Refresh challenges view if open
+            loadUnreadCount(user.userId);
+          }
+        }
+      } catch (error) {
+        console.error('[Notifications] Error handling message:', error);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error('[Notifications] WebSocket error:', error);
+    };
+    
+    ws.onclose = () => {
+      console.log('[Notifications] WebSocket closed');
+    };
+    
+    notificationSocketRef.current = ws;
   };
 
   // Check for challenge URLs on app load
@@ -1020,6 +1063,12 @@ function App() {
 
   const handleSwitchUser = () => {
     // Logout current user and return to auth screen
+    // Close notification WebSocket
+    if (notificationSocketRef.current) {
+      notificationSocketRef.current.close();
+      notificationSocketRef.current = null;
+    }
+    
     clearCurrentUser();
     setCurrentUser(null);
     setShowStartScreen(false);
