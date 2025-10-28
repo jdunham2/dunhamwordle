@@ -104,7 +104,16 @@ export default {
                 roomId,
               }));
               
-              console.log(`Room ${roomId} created`);
+              // Also send player-joined message to match local server behavior
+              socket.send(JSON.stringify({
+                type: "player-joined",
+                roomId,
+                isHost: true,
+                playerCount: 1,
+                isNewPlayer: false,
+              }));
+              
+              console.log(`Room ${roomId} created and host added`);
               break;
             }
 
