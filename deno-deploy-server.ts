@@ -11,6 +11,8 @@
  * Your WebSocket URL: wss://[your-project].deno.dev
  */
 
+declare const Deno: any;
+
 // Database using Deno KV (free, built-in)
 const kv = await Deno.openKv();
 
@@ -113,7 +115,7 @@ async function getUser(userId: string) {
   return db.users[userId];
 }
 
-async function getUserByUsername(username: string) {
+async function getUserByUsername(username: string): Promise<any | null> {
   const db = await getDB();
   // Ensure users object exists
   if (!db.users || typeof db.users !== 'object') {
@@ -426,7 +428,7 @@ export default {
           if (data.type === 'register-user' && data.userId) {
             registerUserSocket(data.userId, socket);
             socket.send(JSON.stringify({ type: 'user-registered' }));
-            break;
+            return;
           }
           
           switch (data.type) {
