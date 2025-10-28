@@ -92,7 +92,11 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({ user, onClose, o
     if (challenge.completions > 0 && challenge.completionDetails.length > 0) {
       // Get the first completion's replay URL
       const firstCompletion = challenge.completionDetails[0];
-      if (firstCompletion.result) {
+      
+      // Try resultUrl first (new format), then generate from result data (old format)
+      if (firstCompletion.resultUrl) {
+        window.open(firstCompletion.resultUrl, '_blank');
+      } else if (firstCompletion.result) {
         const replayUrl = generateResultUrl(firstCompletion.result);
         window.open(replayUrl, '_blank');
       }

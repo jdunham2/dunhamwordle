@@ -507,13 +507,9 @@ function App() {
         isWin
       );
 
-      // Unlock new badges
+      // Unlock new badges (no on-screen notification - badges show in account screen)
       newBadges.forEach(badge => {
         dispatch({ type: 'UNLOCK_BADGE', payload: { badgeId: badge.id, badge } });
-        // Show notification for the first badge (most recent)
-        if (newBadges.length > 0 && badge === newBadges[0]) {
-          setNewBadgeNotification(badge);
-        }
       });
 
       // Update day streak for Word of the Day
@@ -1690,30 +1686,6 @@ function App() {
         </div>
       )}
 
-      {/* New Badge Notification */}
-      {newBadgeNotification && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm mx-4 text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              New Badge Unlocked!
-            </h2>
-            <div className="text-4xl mb-4">{newBadgeNotification.icon}</div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              {newBadgeNotification.name}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {newBadgeNotification.description}
-            </p>
-            <button
-              onClick={() => setNewBadgeNotification(null)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold"
-            >
-              Awesome!
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* User Authentication Screen */}
       {!currentUser && <UserAuthScreen onAuthenticated={handleUserAuthenticated} />}

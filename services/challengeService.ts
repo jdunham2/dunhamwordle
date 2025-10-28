@@ -273,6 +273,7 @@ export async function submitChallengeCompletion(
         guesses: result.guesses,
         solveTime: result.solveTime,
         completedAt: Date.now(),
+        resultUrl: generateResultUrl(result),
       }),
     });
 
