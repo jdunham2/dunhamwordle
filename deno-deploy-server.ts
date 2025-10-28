@@ -308,8 +308,50 @@ export default {
       return response;
     }
 
-    // HTTP endpoint for stats
-    if (req.method === "GET") {
+    // HTTP API endpoints
+    const url = new URL(req.url);
+    
+    // POST /api/challenge - Create a challenge
+    if (req.method === "POST" && url.pathname === "/api/challenge") {
+      try {
+        const challenge = await req.json();
+        await addChallenge(challenge);
+        return Response.json({ success: true, challengeId: challenge.challengeId });
+      } catch (error) {
+        console.error("Error creating challenge:", error);
+        return Response.json({ success: false, error: String(error) }, { status: 500 });
+      }
+    }
+    
+    // POST /api/challenge/:id/complete - Submit completion
+    if (req.method === "POST" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/complete$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const completion = await req.json();
+        await addCompletion({ ...completion, challengeId });
+        return Response.json({ success: true });
+      } catch (error) {
+        console.error("Error submitting completion:", error);
+        return Response.json({ success: false, error: String(error) }, { status: 500 });
+      }
+    }
+    
+    // GET /api/challenge/:id/completions - Get completions
+    if (req.method === "GET" && url.pathname.match(/^\/api\/challenge\/[^\/]+\/completions$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const challengeId = pathParts[3];
+        const completions = await getChallengeCompletions(challengeId);
+        return Response.json({ success: true, completions });
+      } catch (error) {
+        console.error("Error getting completions:", error);
+        return Response.json({ success: false, error: String(error) }, { status: 500 });
+      }
+    }
+    
+    // GET / - Stats endpoint
+    if (req.method === "GET" && url.pathname === "/") {
       const activeRooms = rooms.size;
       const totalConnections = Array.from(rooms.values()).reduce(
         (sum, room) => sum + room.size,
