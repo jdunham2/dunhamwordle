@@ -618,6 +618,39 @@ export default {
       }
     }
     
+    // DELETE /api/user/:userId/delete - Delete user (admin)
+    if (req.method === "DELETE" && url.pathname.match(/^\/api\/user\/[^\/]+\/delete$/)) {
+      try {
+        const pathParts = url.pathname.split('/');
+        const userId = pathParts[3];
+        const db = await getDB();
+        
+        // Delete user
+        delete db.users[userId];
+        
+        // Delete user's challenges inbox
+        delete db.userChallenges[userId];
+        
+        // Delete user's push subscription
+        delete db.pushSubscriptions[userId];
+        
+        await saveDB(db);
+        
+        console.log(`Deleted user: ${userId}`);
+        
+        return Response.json(
+          { success: true },
+          { headers: corsHeaders }
+        );
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        return Response.json(
+          { success: false, error: String(error) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+    
     // GET /api/user/:userId/challenges - Get user's received challenges
     if (req.method === "GET" && url.pathname.match(/^\/api\/user\/[^\/]+\/challenges$/)) {
       try {

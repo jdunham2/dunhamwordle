@@ -310,6 +310,23 @@ export async function subscribeToPushNotifications(userId: string): Promise<bool
   }
 }
 
+// Delete a user (admin only)
+export async function deleteUser(userId: string): Promise<boolean> {
+  try {
+    const wsUrl = getWebSocketUrl();
+    const httpUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+    
+    const response = await fetch(`${httpUrl}/api/user/${userId}/delete`, {
+      method: 'DELETE',
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('[User] Error deleting user:', error);
+    return false;
+  }
+}
+
 // Helper function to convert VAPID key
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);

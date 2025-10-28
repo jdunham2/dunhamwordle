@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, AVATARS, getAllUsers, createUser, loginUser, checkUsernameAvailable } from '../services/userService';
-import { UserPlus, LogIn, Search } from 'lucide-react';
+import { User, AVATARS, getAllUsers, createUser, loginUser, checkUsernameAvailable, deleteUser } from '../services/userService';
+import { UserPlus, LogIn, Search, Trash2, Shield } from 'lucide-react';
 
 interface UserAuthScreenProps {
   onAuthenticated: (user: User) => void;
@@ -14,12 +14,26 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [creating, setCreating] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
+    // Check for admin mode
+    if (searchTerm.toLowerCase() === 'admin') {
+      setAdminMode(true);
+      setFilteredUsers(users);
+      setShowCreateNew(false);
+      return;
+    }
+    
+    setAdminMode(false);
+    setSelectedUsers(new Set());
+    
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);
       setShowCreateNew(false);
@@ -77,14 +91,70 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
       setCreating(false);
     }
   };
+  
+  const handleToggleSelectUser = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+  
+  const handleDeleteUsers = async () => {
+    if (selectedUsers.size === 0) return;
+    
+    const count = selectedUsers.size;
+    const confirmed = confirm(
+      `⚠️ Are you sure you want to delete ${count} user${count > 1 ? 's' : ''}?\n\n` +
+      `This will permanently delete:\n` +
+      `• User accounts\n` +
+      `• All their challenges\n` +
+      `• All their statistics\n\n` +
+      `This action cannot be undone!`
+    );
+    
+    if (!confirmed) return;
+    
+    setDeleting(true);
+    
+    try {
+      // Delete each selected user
+      const deletePromises = Array.from(selectedUsers).map((userId: string) => deleteUser(userId));
+      await Promise.all(deletePromises);
+      
+      // Reload users
+      await loadUsers();
+      setSelectedUsers(new Set());
+      alert(`✅ Successfully deleted ${count} user${count > 1 ? 's' : ''}!`);
+    } catch (error) {
+      console.error('Error deleting users:', error);
+      alert('❌ Failed to delete some users. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center p-4 z-50">
       <div className="bg-zinc-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-center">
-          <h1 className="text-4xl font-bold mb-2">Welcome to Dunham Wordle</h1>
-          <p className="text-blue-100">Sign in or create an account to start playing</p>
+        <div className={`p-6 text-center ${adminMode ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
+          {adminMode ? (
+            <>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Shield className="h-8 w-8" />
+                <h1 className="text-4xl font-bold">Admin Mode</h1>
+              </div>
+              <p className="text-red-100">Select users to delete • {selectedUsers.size} selected</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold mb-2">Welcome to Dunham Wordle</h1>
+              <p className="text-blue-100">Sign in or create an account to start playing</p>
+            </>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -180,34 +250,85 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
           ) : (
             /* User Grid */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredUsers.map((user) => (
-                <button
-                  key={user.userId}
-                  onClick={() => handleUserClick(user)}
-                  className="bg-zinc-700 hover:bg-zinc-600 rounded-xl p-6 transition-all hover:scale-105 hover:shadow-lg group"
-                >
-                  <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">
-                    {user.avatar}
-                  </div>
-                  <div className="text-sm font-semibold text-gray-200 truncate">
-                    {user.username}
-                  </div>
-                  <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-400">
-                    <LogIn className="h-3 w-3" />
-                    Sign in
-                  </div>
-                </button>
-              ))}
+              {filteredUsers.map((user) => {
+                const isSelected = selectedUsers.has(user.userId);
+                return (
+                  <button
+                    key={user.userId}
+                    onClick={() => adminMode ? handleToggleSelectUser(user.userId) : handleUserClick(user)}
+                    className={`rounded-xl p-6 transition-all hover:scale-105 hover:shadow-lg group relative ${
+                      adminMode
+                        ? isSelected
+                          ? 'bg-red-700 ring-4 ring-red-500'
+                          : 'bg-zinc-700 hover:bg-red-800'
+                        : 'bg-zinc-700 hover:bg-zinc-600'
+                    }`}
+                  >
+                    {adminMode && isSelected && (
+                      <div className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1">
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </div>
+                    )}
+                    <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">
+                      {user.avatar}
+                    </div>
+                    <div className="text-sm font-semibold text-gray-200 truncate">
+                      {user.username}
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-400">
+                      {adminMode ? (
+                        <>
+                          <Trash2 className="h-3 w-3" />
+                          {isSelected ? 'Selected' : 'Select'}
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="h-3 w-3" />
+                          Sign in
+                        </>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Footer */}
         {!showCreateNew && filteredUsers.length > 0 && (
-          <div className="p-6 border-t border-zinc-700 bg-zinc-750 text-center">
-            <p className="text-sm text-gray-400">
-              Don't see your account? Type your username above to create a new one.
-            </p>
+          <div className="p-6 border-t border-zinc-700 bg-zinc-750">
+            {adminMode ? (
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl transition-colors"
+                >
+                  Exit Admin Mode
+                </button>
+                <button
+                  onClick={handleDeleteUsers}
+                  disabled={selectedUsers.size === 0 || deleting}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-5 w-5" />
+                      Delete {selectedUsers.size > 0 && `(${selectedUsers.size})`} User{selectedUsers.size !== 1 && 's'}
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 text-center">
+                Don't see your account? Type your username above to create a new one.
+              </p>
+            )}
           </div>
         )}
       </div>
