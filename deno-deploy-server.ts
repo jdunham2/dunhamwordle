@@ -712,13 +712,14 @@ export default {
     
     // GET /api/users - Get all users (with online status)
     if (req.method === "GET" && url.pathname === "/api/users") {
-try {
+      try {
         const users = await getAllUsers();
         // Add online status to each user
         const usersWithOnlineStatus = users.map((user: any) => ({
           ...user,
           isOnline: userSockets.has(user.userId) && (userSockets.get(user.userId)?.size || 0) > 0
         }));
+        console.log('[Backend] Sending users with online status:', usersWithOnlineStatus.map(u => ({ username: u.username, isOnline: u.isOnline })));
         return Response.json(usersWithOnlineStatus, { headers: corsHeaders });
       } catch (error) {
         console.error("Error getting users:", error);
@@ -726,7 +727,7 @@ try {
           { success: false, error: String(error) },
           { status: 500, headers: corsHeaders }
         );
-     }
+      }
     }
     
     // POST /api/user/create - Create new user
