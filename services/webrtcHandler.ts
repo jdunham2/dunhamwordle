@@ -58,6 +58,14 @@ export class WebRTCHandler {
       }
     };
 
+    // Also listen to connection state changes (not just ICE)
+    this.peerConnection.onconnectionstatechange = () => {
+      console.log('Connection state:', this.peerConnection?.connectionState);
+      if (this.peerConnection && this.onConnectionStateChangeCallback) {
+        this.onConnectionStateChangeCallback(this.peerConnection.connectionState);
+      }
+    };
+
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('ICE candidate:', event.candidate);
@@ -179,6 +187,18 @@ export class WebRTCHandler {
       try {
         const message: GameMessage = JSON.parse(event.data);
         console.log('Received message:', message);
+        
+        // Handle ping/pong automatically
+        if (message.type === 'ping') {
+          // Automatically respond with pong
+          this.sendMessage({ type: 'pong' });
+          return; // Don't pass ping to callback
+        } else if (message.type === 'pong') {
+          // Update last pong time
+          this.lastPongTime = Date.now();
+          return; // Don't pass pong to callback
+        }
+        
         if (this.onMessageCallback) {
           this.onMessageCallback(message);
         }
