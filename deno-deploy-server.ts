@@ -425,7 +425,8 @@ function registerUserSocket(userId: string, socket: WebSocket) {
   }
   userSockets.get(userId)!.add(socket);
   socketToUser.set(socket, userId);
-  console.log(`Registered socket for user ${userId}, total: ${userSockets.get(userId)!.size}`);
+  console.log(`[Online] Registered socket for user ${userId}, total active: ${userSockets.get(userId)!.size}`);
+  console.log(`[Online] Current online users:`, Array.from(userSockets.keys()));
 }
 
 // Remove user WebSocket connection
