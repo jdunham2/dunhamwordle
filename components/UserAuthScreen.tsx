@@ -288,8 +288,15 @@ export const UserAuthScreen: React.FC<UserAuthScreenProps> = ({ onAuthenticated 
                         <Trash2 className="h-4 w-4 text-white" />
                       </div>
                     )}
-                    <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">
-                      {user.avatar}
+                    <div className="relative inline-block">
+                      <div className="text-6xl mb-3 group-hover:scale-110 transition-transform">
+                        {user.avatar}
+                      </div>
+                      {user.isOnline && (
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 border-4 border-zinc-700 rounded-full w-6 h-6 flex items-center justify-center">
+                          <div className="bg-green-500 rounded-full w-2 h-2 animate-pulse"></div>
+                        </div>
+                      )}
                     </div>
                     <div className="text-sm font-semibold text-gray-200 truncate">
                       {user.username}

@@ -8,6 +8,7 @@ export interface User {
   lastSeen: number;
   dailyCompletions?: any; // Word of the Day completions object
   stats?: any; // User stats (optional, for future use)
+  isOnline?: boolean; // Whether user is currently online
 }
 
 export interface UserStats {

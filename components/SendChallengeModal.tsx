@@ -188,7 +188,14 @@ export const SendChallengeModal: React.FC<SendChallengeModalProps> = ({
                             : 'bg-zinc-800 text-gray-200 hover:bg-zinc-600'
                         }`}
                       >
-                        <div className="text-3xl">{user.avatar}</div>
+                        <div className="relative">
+                          <div className="text-3xl">{user.avatar}</div>
+                          {user.isOnline && (
+                            <div className="absolute -bottom-1 -right-1 bg-green-500 border-2 border-zinc-800 rounded-full w-4 h-4 flex items-center justify-center">
+                              <div className="bg-green-500 rounded-full w-2 h-2 animate-pulse"></div>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1 text-left">
                           <div className="font-semibold">{user.username}</div>
                         </div>

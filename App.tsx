@@ -12,6 +12,7 @@ import { CollaborativeMultiplayerGame } from './components/CollaborativeMultipla
 import { UserAuthScreen } from './components/UserAuthScreen';
 import { ChallengesView } from './components/ChallengesView';
 import { UserAccountMenu } from './components/UserAccountMenu';
+import { NotificationModal } from './components/NotificationModal';
 import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { useKeyPress } from './hooks/useKeyPress';
 import { loadWordLists } from './services/wordService';
@@ -399,6 +400,10 @@ function App() {
   // User account states
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Notification modal state
+  const [notificationData, setNotificationData] = useState<any>(null);
+  const [notificationType, setNotificationType] = useState<'new-challenge' | 'challenge-completed' | null>(null);
 
   // Enable audio on first user interaction
   const enableAudio = useCallback(() => {
@@ -747,12 +752,14 @@ function App() {
         if (data.type === 'notification') {
           console.log('[Notifications] Received notification:', data);
           
-          // Show toast notification
+          // Show notification modal
           if (data.kind === 'new-challenge') {
-            alert(`🎉 New challenge from ${data.fromUsername}!`);
+            setNotificationData(data);
+            setNotificationType('new-challenge');
             loadUnreadCount(user.userId);
           } else if (data.kind === 'challenge-completed') {
-            alert(`🎉 ${data.completerName} completed your challenge "${data.word}"!`);
+            setNotificationData(data);
+            setNotificationType('challenge-completed');
             // Refresh challenges view if open
             loadUnreadCount(user.userId);
           }
@@ -1100,6 +1107,25 @@ function App() {
     setShowStartScreen(true);
     setMultiplayerRoomId('');
     setIsMultiplayerHost(false);
+  };
+
+  const handleNotificationView = () => {
+    if (notificationType === 'new-challenge') {
+      // Open the challenges inbox
+      setShowChallenges(true);
+    } else if (notificationType === 'challenge-completed') {
+      // Open the challenges sent tab
+      setShowChallenges(true);
+    }
+    // Close modal
+    setNotificationData(null);
+    setNotificationType(null);
+  };
+
+  const handleNotificationCancel = () => {
+    // Simply close modal
+    setNotificationData(null);
+    setNotificationType(null);
   };
 
   // Confetti celebration function
@@ -1697,6 +1723,17 @@ function App() {
           onClose={() => setShowWordChallenge(false)}
           currentUser={currentUser}
           validWords={wordListsState?.validWords}
+        />
+      )}
+
+      {/* Notification Modal */}
+      {notificationType && notificationData && (
+        <NotificationModal
+          isOpen={true}
+          type={notificationType}
+          data={notificationData}
+          onView={handleNotificationView}
+          onCancel={handleNotificationCancel}
         />
       )}
 
