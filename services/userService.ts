@@ -135,6 +135,7 @@ export async function getAllUsers(): Promise<User[]> {
     }
     
     const users = await response.json();
+    console.log('[UserService] getAllUsers returned:', users.map((u: User) => ({ username: u.username, isOnline: u.isOnline })));
     return users;
   } catch (error) {
     console.error('[User] Error fetching users:', error);
